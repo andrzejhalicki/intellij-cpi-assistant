@@ -27,8 +27,8 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          branch: dev
-          base: main
+          branch: main
+          base: dev
           title: "Merge dev to main"
           body: |
             This pull request merges all commits from the `dev` branch into `main`.
