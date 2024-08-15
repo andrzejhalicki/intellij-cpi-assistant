@@ -1,0 +1,39 @@
+name: Auto Create Pull Request
+
+on:
+  push:
+    branches:
+      - dev  # Trigger action on pushes to the 'dev' branch
+
+jobs:
+  create-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get commit messages
+        id: get-commits
+        run: |
+          # Collect all commits on dev branch since it diverged from main
+          commits=$(git log origin/main..origin/dev --pretty=format:"- %s")
+          echo "commits=$commits" >> $GITHUB_ENV
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          branch: dev
+          base: main
+          title: "Merge dev to main"
+          body: |
+            This pull request merges all commits from the `dev` branch into `main`.
+
+            ## Commits:
+            ${{ env.commits }}
+          labels: "auto-generated"
+          delete-branch: false
