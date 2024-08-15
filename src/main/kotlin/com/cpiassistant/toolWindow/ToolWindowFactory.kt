@@ -61,8 +61,6 @@ class ToolWindowFactory : ToolWindowFactory {
         fun getContent() = JBPanel<JBPanel<*>>(BorderLayout()).apply {
 
             actionGroup.add(ActionManager.getInstance().getAction("com.cpiassistant.actions.AddTenant"))
-            //actionGroup.add(ActionManager.getInstance().getAction("com.cpiassistant.actions.ExpandTreeAction"))
-            //actionGroup.add(ActionManager.getInstance().getAction("com.cpiassistant.actions.CollapseTreeAction"))
             val actionToolbar: ActionToolbar =
                 ActionManager.getInstance().createActionToolbar("CPI Assistant", actionGroup, true)
             actionToolbar.targetComponent = this
