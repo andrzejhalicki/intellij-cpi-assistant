@@ -5,17 +5,25 @@ on:
     branches:
       - dev  # Trigger action on pushes to the 'dev' branch
 
+permissions:
+  contents: write  # Ensure the bot can push and create PRs
+
 jobs:
   create-pull-request:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history including branches
 
       - name: Setup Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: git fetch origin
 
       - name: Get commit messages
         id: get-commits
@@ -27,8 +35,9 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          branch: main
-          base: dev
+          token: ${{ secrets.GITHUB_TOKEN }}  # Use the default GitHub token
+          branch: dev  # The branch to merge FROM
+          base: main   # The branch to merge INTO
           title: "Merge dev to main"
           body: |
             This pull request merges all commits from the `dev` branch into `main`.
