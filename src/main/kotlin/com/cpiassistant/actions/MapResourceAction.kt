@@ -26,7 +26,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
-class MapResourceAction: AnAction() {
+class MapResourceAction : AnAction() {
 
     override fun actionPerformed(@NotNull event: AnActionEvent) {
         val tree = event.getData(PlatformDataKeys.CONTEXT_COMPONENT) as JTree
@@ -36,15 +36,47 @@ class MapResourceAction: AnAction() {
         val resource = selectedNode.userObject as CpiResource
         val descriptor = FileChooserDescriptor(true, false, false, false, false, false)
         val selectedFiles = FileChooser.chooseFiles(descriptor, event.project, null)
-        if (selectedFiles.isNotEmpty()) {
-            val selectedFile: VirtualFile = selectedFiles[0]
+
+        if (selectedFiles.isEmpty()) {
+            Notifications.Bus.notify(
+                Notification(
+                    "Custom Notification Group",
+                    "No file selected.",
+                    NotificationType.INFORMATION
+                )
+            )
+            return
+        }
+
+        val selectedFile: VirtualFile = selectedFiles[0]
+
+        try {
             val fileNodeStateComponent = service<FileNodeStateComponent>()
             val newNodeData = FileNodeInfo(selectedFile.name, selectedFile.path, artifact.id)
             fileNodeStateComponent.addFileNode(newNodeData)
+
             resource.path = selectedFile.path
             selectedNode.userObject = resource
+
             (tree.model as DefaultTreeModel).nodeStructureChanged(selectedNode)
             tree.updateUI()
+
+            Notifications.Bus.notify(
+                Notification(
+                    "Custom Notification Group",
+                    "Resource mapped successfully.",
+                    NotificationType.INFORMATION
+                )
+            )
+        } catch (e: Exception) {
+            Notifications.Bus.notify(
+                Notification(
+                    "Custom Notification Group",
+                    "Error",
+                    "Error mapping resource: ${e.message}",
+                    NotificationType.ERROR
+                )
+            )
         }
     }
 

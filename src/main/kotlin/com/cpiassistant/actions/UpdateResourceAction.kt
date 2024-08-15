@@ -19,7 +19,7 @@ import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
 
-class UpdateResourceAction: AnAction() {
+class UpdateResourceAction : AnAction() {
 
     override fun actionPerformed(@NotNull event: AnActionEvent) {
         val tree = event.getData(PlatformDataKeys.CONTEXT_COMPONENT) as JTree
@@ -27,20 +27,33 @@ class UpdateResourceAction: AnAction() {
         val selectedNode = selectionPath?.lastPathComponent as? DefaultMutableTreeNode ?: return
         val artifact = (selectedNode.parent as DefaultMutableTreeNode).userObject as CpiArtifact
         val resource = selectedNode.userObject as CpiResource
-        if(resource.path.isEmpty()) {
-            Messages.showInfoMessage("Resource is not mapped to any local file",resource.path)
+        if (resource.path.isEmpty()) {
+            Messages.showInfoMessage("Resource is not mapped to any local file", resource.path)
             return
         }
         val file = LocalFileSystem.getInstance().findFileByPath(resource.path)
-        if(file?.exists() == false){
-            Messages.showInfoMessage("File does not exist",resource.path)
+        if (file == null || !file.exists()) {
+            Messages.showInfoMessage("File does not exist", resource.path)
             return
         }
-        val fileEncoded = Base64.getEncoder().encodeToString(file?.contentsToByteArray())
-        artifact.isLoaded = false
-        artifact.updateResource(resource.name, fileEncoded) { res ->
+        try {
+            val fileEncoded = Base64.getEncoder().encodeToString(file.contentsToByteArray())
+            artifact.isLoaded = false
+            artifact.updateResource(resource.name, fileEncoded) { res ->
+                artifact.isLoaded = true
+            }
+            artifact.isLoaded = true
+        } catch (e: Exception) {
+            artifact.isLoaded = true
+            Notifications.Bus.notify(
+                Notification(
+                    "Custom Notification Group",
+                    "Error",
+                    "Error updating resource: ${e.message}",
+                    NotificationType.ERROR
+                )
+            )
         }
-        artifact.isLoaded = true
     }
 
 }
