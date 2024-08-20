@@ -27,22 +27,22 @@ class CpiScriptCollection(override val id: String, override val name: String, ov
     override fun addResource(name: String, content: String, callback: (Boolean) -> Unit) {
         this.service.createScriptCollectionResource(this.id, name,content) { res ->
             if(res) {
-                Notifications.Bus.notify(Notification("CPI Assistant", "Resource ${name} added", NotificationType.INFORMATION))
+                Notifications.Bus.notify(Notification("Custom Notification Group", "Resource ${name} added", NotificationType.INFORMATION))
             } else {
-                Notifications.Bus.notify(Notification("CPI Assistant", "Resource ${name} not added", NotificationType.ERROR))
+                Notifications.Bus.notify(Notification("Custom Notification Group", "Resource ${name} not added", NotificationType.ERROR))
             }
             callback(res)
         }
     }
 
     override fun updateResource(name: String, content: String, callback: (Boolean) -> Unit) {
-        this.service.updateScriptCollectionResource(this.id, name,content) { res ->
-            if(res) {
-                Notifications.Bus.notify(Notification("CPI Assistant", "Resource ${name} updated", NotificationType.INFORMATION))
+        this.service.updateScriptCollectionResource(this.id, name,content) { success, message ->
+            if(success) {
+                Notifications.Bus.notify(Notification("Custom Notification Group", "Resource ${name} updated", NotificationType.INFORMATION))
             } else {
-                Notifications.Bus.notify(Notification("CPI Assistant", "Resource ${name} updated", NotificationType.ERROR))
+                Notifications.Bus.notify(Notification("Custom Notification Group", "Resource ${name} not updated: $message", NotificationType.ERROR))
             }
-            callback(res)
+            callback(success)
         }
     }
 

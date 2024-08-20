@@ -266,25 +266,25 @@ class CpiService(
         }
     }
 
-    fun updateResource(artifactId: String, name: String, content: String, callback: (Boolean) -> Unit) {
+    fun updateResource(artifactId: String, name: String, content: String, callback: (Boolean,String) -> Unit) {
         this.updateResourceInternal(
             artifactId,
             name,
             content,
             "/IntegrationDesigntimeArtifacts(Id='${artifactId}',Version='active')/\$links/Resources(Name='${name}',ResourceType='groovy')"
-        ) {
-            callback(it)
+        ) { success, message ->
+            callback(success, message)
         }
     }
 
-    fun updateScriptCollectionResource(artifactId: String, name: String, content: String, callback: (Boolean) -> Unit) {
+    fun updateScriptCollectionResource(artifactId: String, name: String, content: String, callback: (Boolean,String) -> Unit) {
         this.updateResourceInternal(
             artifactId,
             name,
             content,
             "/ScriptCollectionDesigntimeArtifacts(Id='${artifactId}',Version='active')/\$links/Resources(Name='${name}',ResourceType='groovy')"
-        ) {
-            callback(it)
+        ) { success, message ->
+            callback(success, message)
         }
     }
 
@@ -412,7 +412,7 @@ class CpiService(
         name: String,
         content: String,
         endpoint: String,
-        callback: (Boolean) -> Unit
+        callback: (Boolean,String) -> Unit
     ) {
         val jsonObject = JSONObject()
         jsonObject.put("ResourceContent", content)
@@ -423,7 +423,7 @@ class CpiService(
         val response = call.execute()
         val res = response.isSuccessful
         response.body.close()
-        callback(res)
+        callback(response.isSuccessful,response.message)
     }
 
 }
