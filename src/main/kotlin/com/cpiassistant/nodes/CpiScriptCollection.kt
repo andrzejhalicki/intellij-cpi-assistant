@@ -1,16 +1,11 @@
 package com.cpiassistant.nodes
 
-import FileNodeStateComponent
 import com.cpiassistant.services.CpiService
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.ui.components.JBScrollPane
-import java.awt.BorderLayout
-import com.intellij.openapi.components.service
 
 class CpiScriptCollection(override val id: String, override val name: String, override val service: CpiService,
                           override var isLoaded: Boolean = false
