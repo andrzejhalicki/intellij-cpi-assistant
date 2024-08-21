@@ -1,9 +1,7 @@
 package com.cpiassistant.actions
 
-import CustomDataProvider
 import FileNodeInfo
 import FileNodeStateComponent
-import com.cpiassistant.nodes.BaseNode
 import com.cpiassistant.nodes.CpiArtifact
 import com.cpiassistant.nodes.CpiResource
 import com.intellij.notification.Notification
@@ -15,12 +13,9 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.components.service
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
-import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.annotations.NotNull
-import java.util.*
-import javax.swing.JComponent
 import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
@@ -36,6 +31,7 @@ class MapResourceAction : AnAction() {
         val resource = selectedNode.userObject as CpiResource
         val descriptor = FileChooserDescriptor(true, false, false, false, false, false)
         val selectedFiles = FileChooser.chooseFiles(descriptor, event.project, null)
+        val project: Project? = event.project
 
         if (selectedFiles.isEmpty()) {
             Notifications.Bus.notify(
@@ -51,9 +47,9 @@ class MapResourceAction : AnAction() {
         val selectedFile: VirtualFile = selectedFiles[0]
 
         try {
-            val fileNodeStateComponent = service<FileNodeStateComponent>()
+            val fileNodeStateComponent = project?.service<FileNodeStateComponent>()
             val newNodeData = FileNodeInfo(selectedFile.name, selectedFile.path, artifact.id)
-            fileNodeStateComponent.addFileNode(newNodeData)
+            fileNodeStateComponent?.addFileNode(newNodeData)
 
             resource.path = selectedFile.path
             selectedNode.userObject = resource

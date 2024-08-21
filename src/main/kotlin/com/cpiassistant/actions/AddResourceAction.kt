@@ -16,6 +16,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.annotations.NotNull
@@ -65,7 +66,7 @@ class AddResourceAction : AnAction() {
 
                 ApplicationManager.getApplication().invokeLater {
                     updateTreeWithNewResource(tree, selectedNode, selectionPath, newResource, artifact)
-                    saveToStorage(newResource, selectedNode)
+                    saveToStorage(newResource, selectedNode, project)
                 }
             }
         } catch (e: Exception) {
@@ -108,10 +109,10 @@ class AddResourceAction : AnAction() {
         tree.startEditingAtPath(newNodePath)
     }
 
-    private fun saveToStorage(newResource: CpiResource, selectedNode: DefaultMutableTreeNode) {
+    private fun saveToStorage(newResource: CpiResource, selectedNode: DefaultMutableTreeNode, project: Project?) {
         val newNodeData = FileNodeInfo(newResource.name, newResource.path, (selectedNode.userObject as BaseNode).id)
-        val fileNodeStateComponent = service<FileNodeStateComponent>()
-        fileNodeStateComponent.addFileNode(newNodeData)
+        val fileNodeStateComponent = project?.service<FileNodeStateComponent>()
+        fileNodeStateComponent?.addFileNode(newNodeData)
     }
 
 }

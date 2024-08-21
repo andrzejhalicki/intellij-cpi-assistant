@@ -1,4 +1,6 @@
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
@@ -18,9 +20,10 @@ class AddTenantDialog : DialogWrapper(true) {
     private lateinit var tokenUrl: String
     private lateinit var clientId: String
     private lateinit var clientSecret: String
+    private val project: Project? = ProjectManager.getInstance().openProjects.firstOrNull()
 
-    private val tenantStateComponent = service<TenantStateComponent>()
-    private val tenants = tenantStateComponent.getTenants()
+    private val tenantStateComponent = project?.service<TenantStateComponent>()
+    private val tenants = tenantStateComponent?.getTenants()
 
     init {
         init()
@@ -76,7 +79,7 @@ class AddTenantDialog : DialogWrapper(true) {
             return false
         }
 
-        val existingTenant = tenants.find { it.name == name }
+        val existingTenant = tenants?.find { it.name == name }
         if(existingTenant != null) {
             setErrorText("Tenant with this name already exists", null)
             return false

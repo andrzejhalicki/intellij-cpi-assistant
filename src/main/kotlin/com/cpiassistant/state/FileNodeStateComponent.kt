@@ -1,17 +1,14 @@
-import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.State
-import com.intellij.openapi.components.Storage
+import com.intellij.openapi.components.*
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Tag
 
-@Service
+@Service(Service.Level.PROJECT)
 @State(
     name = "FileNodeState",
     storages = [Storage("FileNodeState.xml")]
 )
-class FileNodeStateComponent : PersistentStateComponent<FileNodeStateComponent.State> {
+public class FileNodeStateComponent : PersistentStateComponent<FileNodeStateComponent.State> {
 
     private var state = State()
 

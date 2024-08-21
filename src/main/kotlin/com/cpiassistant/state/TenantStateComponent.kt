@@ -9,13 +9,12 @@ import com.intellij.util.xmlb.XmlSerializerUtil
 import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Tag
 
-
-@Service
+@Service(Service.Level.PROJECT)
 @State(
     name = "TenantState",
     storages = [Storage("TenantState.xml")]
 )
-class TenantStateComponent : PersistentStateComponent<TenantStateComponent.State> {
+public class TenantStateComponent : PersistentStateComponent<TenantStateComponent.State> {
 
     private var state = State()
 
@@ -46,7 +45,7 @@ class TenantStateComponent : PersistentStateComponent<TenantStateComponent.State
     }
 
     fun getTenants(): List<TenantInfo> {
-        return this.state.tenants.map { tenant ->
+        return this.state.tenants.filter { tenant -> true }.map { tenant ->
             val attributes = createCredentialAttributes(tenant.url, tenant.clientID)
             val passwordSafe: PasswordSafe = PasswordSafe.instance
 
@@ -62,7 +61,7 @@ class TenantStateComponent : PersistentStateComponent<TenantStateComponent.State
     }
 }
 
-@Tag("FileNodeInfo")
+@Tag("TenantInfo")
 data class TenantInfo(
     @Attribute var name: String = "",
     @Attribute var url: String = "",

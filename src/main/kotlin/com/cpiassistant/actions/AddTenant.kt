@@ -40,8 +40,8 @@ class AddTenant : AnAction() {
                     dialog.getClientId(),
                     dialog.getClientSecret()
                 )
-                val tenantStateComponent = service<TenantStateComponent>()
-                tenantStateComponent.addTenant(tenantInfo)
+                val tenantStateComponent = project?.service<TenantStateComponent>()
+                tenantStateComponent?.addTenant(tenantInfo)
 
                 val newTenant = Tenant(
                     dialog.getName(), dialog.getName(),

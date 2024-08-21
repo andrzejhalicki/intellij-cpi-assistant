@@ -10,6 +10,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import org.jetbrains.annotations.NotNull
 import javax.swing.JTree
@@ -24,6 +25,7 @@ class DeleteTenantAction : AnAction() {
         val selectionPath: TreePath? = tree.selectionPath
         val selectedNode = selectionPath?.lastPathComponent as? DefaultMutableTreeNode ?: return
         val tenant = selectedNode.userObject as Tenant
+        val project: Project? = event.project
 
         val confirmResult = Messages.showYesNoDialog(
             "Are you sure you want to delete the tenant '${tenant.name}'?",
@@ -36,9 +38,9 @@ class DeleteTenantAction : AnAction() {
         }
 
         try {
-            val tenantStateComponent = service<TenantStateComponent>()
+            val tenantStateComponent = project?.service<TenantStateComponent>()
             val tenantInfo = TenantInfo(tenant.name, tenant.service.url, tenant.service.tokenUrl, "", "")
-            tenantStateComponent.deleteTenant(tenantInfo)
+            tenantStateComponent?.deleteTenant(tenantInfo)
 
             val treeModel = tree.model as? DefaultTreeModel ?: return
 
