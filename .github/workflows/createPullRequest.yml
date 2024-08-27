@@ -1,9 +1,10 @@
 name: Auto Create Pull Request
 
 on:
-  push:
-    branches:
-      - dev  # Trigger action on pushes to the 'dev' branch
+#  push:
+#    branches:
+#      - dev  # Trigger action on pushes to the 'dev' branch
+  workflow_dispatch:
 
 jobs:
   create-pull-request:
@@ -27,8 +28,8 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          branch: dev
-          base: main
+          branch: main
+          base: dev
           title: "Merge dev to main"
           body: |
             This pull request merges all commits from the `dev` branch into `main`.

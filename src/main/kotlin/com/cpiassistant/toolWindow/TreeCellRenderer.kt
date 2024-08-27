@@ -2,23 +2,15 @@ package com.cpiassistant.toolWindow
 
 import com.cpiassistant.MyIcons
 import com.cpiassistant.nodes.*
-import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.*
-import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBLabel
-import com.intellij.ui.components.JBPanel
 import java.awt.*
-import java.awt.event.ActionListener
-import java.awt.event.MouseEvent
-import java.awt.event.MouseListener
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeCellRenderer
-import javax.swing.tree.TreeCellRenderer
 
 
-class TableCellRenderer() : DefaultTreeCellRenderer() {
+class TreeCellRenderer() : DefaultTreeCellRenderer() {
 
     override fun getTreeCellRendererComponent(
         tree: JTree?,

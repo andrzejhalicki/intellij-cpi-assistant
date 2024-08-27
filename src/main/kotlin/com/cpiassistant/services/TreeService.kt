@@ -7,7 +7,7 @@ import com.cpiassistant.nodes.CpiResource
 import com.cpiassistant.nodes.Tenant
 import com.cpiassistant.toolWindow.MyTreeCellEditor
 import com.cpiassistant.toolWindow.MyTreeModel
-import com.cpiassistant.toolWindow.TableCellRenderer
+import com.cpiassistant.toolWindow.TreeCellRenderer
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.components.Service
@@ -116,7 +116,7 @@ class TreeService(private val project: Project) {
 
             }
         })
-        val renderer: DefaultTreeCellRenderer = TableCellRenderer()
+        val renderer: DefaultTreeCellRenderer = TreeCellRenderer()
         tree.setCellRenderer(renderer);
         tree.cellEditor = MyTreeCellEditor(tree, renderer)
 

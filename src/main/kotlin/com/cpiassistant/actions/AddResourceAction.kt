@@ -6,27 +6,26 @@ import FileNodeStateComponent
 import com.cpiassistant.nodes.BaseNode
 import com.cpiassistant.nodes.CpiArtifact
 import com.cpiassistant.nodes.CpiResource
-import com.cpiassistant.toolWindow.MyTreeCellEditor
-import com.cpiassistant.toolWindow.TableCellRenderer
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationType
+import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.annotations.NotNull
-import java.io.File
 import java.util.*
-import javax.swing.JComponent
-import javax.swing.JFileChooser
 import javax.swing.JTree
 import javax.swing.tree.*
 
-class AddResourceAction: AnAction() {
+class AddResourceAction : AnAction() {
     override fun actionPerformed(@NotNull event: AnActionEvent) {
-        val component = event.getData(PlatformDataKeys.CONTEXT_COMPONENT) as? JComponent
         val project = event.project
         val tree = event.getData(PlatformDataKeys.CONTEXT_COMPONENT) as JTree
         val dataProvider = tree.getClientProperty("CustomDataProvider") as? CustomDataProvider
@@ -36,43 +35,84 @@ class AddResourceAction: AnAction() {
 
         val descriptor = FileChooserDescriptor(true, false, false, false, false, false)
         val selectedFiles = FileChooser.chooseFiles(descriptor, project, null)
-        if (selectedFiles.isNotEmpty()) {
-            val selectedFile: VirtualFile = selectedFiles[0]
-            val newResource = CpiResource(selectedFile.name, selectedFile.name, selectedFile.path,artifact!!.id)
-            val fileEncoded = Base64.getEncoder().encodeToString(selectedFile.contentsToByteArray())
-            artifact.addResource(newResource.id,fileEncoded) { res ->
-                if (!res) return@addResource
 
-                val newNodeData =
-                    FileNodeInfo(selectedFile.name, selectedFile.path, (selectedNode.userObject as BaseNode).id)
-
-                val newNode = DefaultMutableTreeNode(
-                    CpiResource(
-                        selectedFile.name,
-                        selectedFile.name,
-                        selectedFile.path,
-                        artifact!!.id,
-                        true
-                    )
+        if (selectedFiles.isEmpty()) {
+            Notifications.Bus.notify(
+                Notification(
+                    "Custom Notification Group",
+                    "No file selected.",
+                    NotificationType.INFORMATION
                 )
-
-                selectedNode.add(newNode)
-
-                val model = tree.model as DefaultTreeModel
-                model.nodeStructureChanged(selectedNode)
-
-                // Optionally, you can expand the selected node to show the new child
-                tree.expandPath(selectionPath)
-                // Start editing the new node
-                val newNodePath = selectionPath.pathByAddingChild(newNode)
-                tree.scrollPathToVisible(newNodePath)
-                tree.startEditingAtPath(newNodePath)
-
-                // Save to persistent storage
-                val fileNodeStateComponent = service<FileNodeStateComponent>()
-                fileNodeStateComponent.addFileNode(newNodeData)
-            }
+            )
+            return
         }
+
+        val selectedFile: VirtualFile = selectedFiles[0]
+        val newResource = CpiResource(selectedFile.name, selectedFile.name, selectedFile.path, artifact!!.id)
+        try {
+            val fileEncoded = Base64.getEncoder().encodeToString(selectedFile.contentsToByteArray())
+            artifact.addResource(newResource.id, fileEncoded) { res ->
+                if (!res) {
+                    Notifications.Bus.notify(
+                        Notification(
+                            "Custom Notification Group",
+                            "Error",
+                            "Failed to add resource to the artifact.",
+                            NotificationType.ERROR
+                        )
+                    )
+                    return@addResource
+                }
+
+                ApplicationManager.getApplication().invokeLater {
+                    updateTreeWithNewResource(tree, selectedNode, selectionPath, newResource, artifact)
+                    saveToStorage(newResource, selectedNode, project)
+                }
+            }
+        } catch (e: Exception) {
+            Notifications.Bus.notify(
+                Notification(
+                    "Custom Notification Group",
+                    "Error",
+                    "Error processing file: ${e.message}",
+                    NotificationType.ERROR
+                )
+            )
+        }
+    }
+
+    private fun updateTreeWithNewResource(
+        tree: JTree,
+        selectedNode: DefaultMutableTreeNode,
+        selectionPath: TreePath,
+        newResource: CpiResource,
+        artifact: CpiArtifact
+    ) {
+        val newNode = DefaultMutableTreeNode(
+            CpiResource(
+                newResource.name,
+                newResource.name,
+                newResource.path,
+                artifact.id,
+                true
+            )
+        )
+
+        selectedNode.add(newNode)
+
+        val model = tree.model as DefaultTreeModel
+        model.nodeStructureChanged(selectedNode)
+
+        tree.expandPath(selectionPath)
+        val newNodePath = selectionPath.pathByAddingChild(newNode)
+        tree.scrollPathToVisible(newNodePath)
+        tree.startEditingAtPath(newNodePath)
+    }
+
+    private fun saveToStorage(newResource: CpiResource, selectedNode: DefaultMutableTreeNode, project: Project?) {
+        val newNodeData = FileNodeInfo(newResource.name, newResource.path, (selectedNode.userObject as BaseNode).id)
+        val fileNodeStateComponent = project?.service<FileNodeStateComponent>()
+        fileNodeStateComponent?.addFileNode(newNodeData)
     }
 
 }

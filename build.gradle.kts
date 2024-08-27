@@ -2,18 +2,17 @@ plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.9.0"
     id("org.jetbrains.intellij") version "1.15.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0-RC3"
 }
 
 group = "com.cpiassistant"
-version = "1.0-SNAPSHOT"
+version = "1.0.3"
 
 repositories {
     mavenCentral()
 }
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3")
+    implementation("net.minidev:json-smart:2.5.1")
 }
 
 // Configure Gradle IntelliJ Plugin
@@ -41,7 +40,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("222")
-        untilBuild.set("232.*")
+        untilBuild.set("242.*")
     }
 
     signPlugin {
