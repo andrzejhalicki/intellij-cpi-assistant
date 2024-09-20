@@ -4,12 +4,11 @@ import com.cpiassistant.services.CpiService
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.ApplicationManager
 
 class CpiScriptCollection(override val id: String, override val name: String, override val service: CpiService,
                           override var isLoaded: Boolean = false
-): DataContext, CpiArtifact(id, name, service, isLoaded) {
+): CpiArtifact(id, name, service, isLoaded) {
     private val resources = mutableListOf<CpiResource>()
 
     override fun getResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
