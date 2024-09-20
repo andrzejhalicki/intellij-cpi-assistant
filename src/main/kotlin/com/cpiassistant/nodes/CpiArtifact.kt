@@ -9,7 +9,7 @@ import com.intellij.openapi.application.ApplicationManager
 
 open class CpiArtifact(override val id: String, override val name: String, open val service: CpiService,
                        override var isLoaded: Boolean = false
-): BaseNode(), DataContext {
+): BaseNode() {
     private val resources = mutableListOf<CpiResource>()
 
     open fun getResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
@@ -39,11 +39,6 @@ open class CpiArtifact(override val id: String, override val name: String, open 
             }
             callback(success)
         }
-    }
-
-    override fun getData(dataId: String): Any? {
-        println(dataId)
-        return this
     }
 
     open fun deploy() {
