@@ -41,7 +41,7 @@ You will see a window to paste service key and name.
 
 <img src=".github/images/CPIA-3.jpg" alt="Plugin Screenshot" width="200">
 
-> **Hint:** SAP Process Integration Runtime instance needs to have role `WorkspaceArtifactsDeploy` assigned.
+> **Hint:** SAP Process Integration Runtime instance needs to have roles `WorkspaceArtifactsDeploy`,`AuthGroup_IntegrationDeveloper` assigned.
 
 After clicking `OK` button the new tenant will start loading packages, artifacts and scripts.
 
@@ -57,6 +57,8 @@ Right click on script and choose `Map script`.
 After choosing your script you will see a path next to the script name. Now you are ready to update it in the tenant. Right click on the script again and choose `Update in tenant`.
 
 <img src=".github/images/CPIA-update-in-tenant.jpg" alt="Plugin Screenshot" width="300">
+
+> **Hint:** Make sure the artifact is not locked before updating and deploying from the tool.
 
 ### Flow/Script collection deployment
 
