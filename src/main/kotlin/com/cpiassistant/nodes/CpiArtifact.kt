@@ -13,6 +13,17 @@ open class CpiArtifact(override val id: String, override val name: String, open 
     private val resources = mutableListOf<CpiResource>()
 
     open fun getResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
+        if(!this.resources.isEmpty()){
+            callback(this.resources)
+            return
+        }
+        this.service.getResources(artifactId) { r ->
+            this.resources.addAll(r)
+            callback(this.resources)
+        }
+    }
+
+    open fun refreshResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
         this.service.getResources(artifactId) { r ->
             this.resources.clear()
             this.resources.addAll(r)

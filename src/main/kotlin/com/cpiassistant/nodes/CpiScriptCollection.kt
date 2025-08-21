@@ -12,6 +12,17 @@ class CpiScriptCollection(override val id: String, override val name: String, ov
     private val resources = mutableListOf<CpiResource>()
 
     override fun getResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
+        if(!this.resources.isEmpty()){
+            callback(this.resources)
+            return
+        }
+        this.service.getScriptCollectionResources(artifactId) { r ->
+            this.resources.addAll(r)
+            callback(this.resources)
+        }
+    }
+
+    override fun refreshResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
         this.service.getScriptCollectionResources(artifactId) { r ->
             this.resources.clear()
             this.resources.addAll(r)

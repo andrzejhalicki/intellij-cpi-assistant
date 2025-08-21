@@ -1,6 +1,9 @@
 package com.cpiassistant.actions;
 
 import com.cpiassistant.nodes.CpiArtifact
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationType
+import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -19,10 +22,10 @@ class RefreshArtifactAction : AnAction() {
         val artifact = selectedNode.userObject as CpiArtifact
 
         artifact.isLoaded = false
-        artifact.getResources(artifact.id) { resources ->
+        artifact.refreshResources(artifact.id) { resources ->
             if (resources.isEmpty()) {
                 artifact.isLoaded = true
-                return@getResources
+                return@refreshResources
             }
             selectedNode.removeAllChildren()
             resources.forEach { resource ->
@@ -33,6 +36,14 @@ class RefreshArtifactAction : AnAction() {
             val model = tree.model as DefaultTreeModel
             model.nodeStructureChanged(selectedNode)
             tree.expandPath(selectionPath)
+
+            Notifications.Bus.notify(
+                Notification(
+                    "Custom Notification Group",
+                    "Artifact ${artifact.name} refreshed.",
+                    NotificationType.INFORMATION
+                )
+            )
         }
     }
 

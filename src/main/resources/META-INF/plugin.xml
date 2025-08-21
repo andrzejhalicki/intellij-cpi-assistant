@@ -96,6 +96,13 @@
                 icon="com.cpiassistant.MyIcons.Refresh">
             <add-to-group group-id="com.cpiassistant.actions.ArtifactActionGroup"/>
         </action>
+        <action id="com.cpiassistant.actions.SyncAllResourcesAction"
+                class="com.cpiassistant.actions.SyncAllResourcesAction"
+                text="Sync all scripts"
+                description="Sync all scripts"
+                icon="com.cpiassistant.MyIcons.Download">
+            <add-to-group group-id="com.cpiassistant.actions.ArtifactActionGroup"/>
+        </action>
         <action id="com.cpiassistant.actions.UpdateResourceAction"
                 class="com.cpiassistant.actions.UpdateResourceAction"
                 text="Update in tenant"
