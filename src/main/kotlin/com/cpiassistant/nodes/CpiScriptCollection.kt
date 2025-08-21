@@ -13,6 +13,7 @@ class CpiScriptCollection(override val id: String, override val name: String, ov
 
     override fun getResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
         this.service.getScriptCollectionResources(artifactId) { r ->
+            this.resources.clear()
             this.resources.addAll(r)
             callback(this.resources)
         }

@@ -29,9 +29,7 @@
     <change-notes><![CDATA[
         <h2>New Features</h2>
         <ul>
-            <li>Sync script from tenant</li>
-            <li>Tree search</li>
-            <li>Double click to open script</li>
+            <li>Refresh artifact to get newly created scripts in CI</li>
         </ul>
 ]]></change-notes>
 
@@ -89,6 +87,13 @@
                 text="Add script"
                 description="Add script"
                 icon="com.cpiassistant.MyIcons.Add">
+            <add-to-group group-id="com.cpiassistant.actions.ArtifactActionGroup"/>
+        </action>
+        <action id="com.cpiassistant.actions.RefreshArtifactAction"
+                class="com.cpiassistant.actions.RefreshArtifactAction"
+                text="Refresh"
+                description="Refresh artifact"
+                icon="com.cpiassistant.MyIcons.Refresh">
             <add-to-group group-id="com.cpiassistant.actions.ArtifactActionGroup"/>
         </action>
         <action id="com.cpiassistant.actions.UpdateResourceAction"
