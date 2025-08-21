@@ -40,6 +40,12 @@ class CpiScriptCollection(override val id: String, override val name: String, ov
         }
     }
 
+    override fun downloadResource(name: String, callback: (String) -> Unit) {
+        this.service.getScriptCollectionResource(this.id, name) { r ->
+            callback(r)
+        }
+    }
+
     override fun deploy() {
         this.service.deployScriptCollection(this.id) { taskId ->
             val service = this.service

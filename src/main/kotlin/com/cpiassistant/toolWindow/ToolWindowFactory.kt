@@ -2,6 +2,7 @@ package com.cpiassistant.toolWindow
 
 import com.cpiassistant.actions.CollapseTreeAction
 import com.cpiassistant.actions.ExpandTreeAction
+import com.cpiassistant.actions.SearchTreeAction
 import com.cpiassistant.services.TreeService
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionToolbar
@@ -34,6 +35,7 @@ class ToolWindowFactory : ToolWindowFactory {
                 val tree = treeService.buildTree()
                 myToolWindow.actionGroup.add(ExpandTreeAction(tree))
                 myToolWindow.actionGroup.add(CollapseTreeAction(tree))
+                myToolWindow.actionGroup.add(SearchTreeAction(tree))
 
                 val treeScrollPane = JBScrollPane(tree)
                 treePanel.add(treeScrollPane, BorderLayout.CENTER)

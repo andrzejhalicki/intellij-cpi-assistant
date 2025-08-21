@@ -243,12 +243,26 @@ class CpiService(
         callback(resources)
     }
 
+    fun getResource(artifactId: String, resourceName: String, callback: (String) -> Unit) {
+        val resource = this.getResourceInternal(
+            "/IntegrationDesigntimeArtifacts(Id='${artifactId}',Version='active')/Resources(Name='${resourceName}',ResourceType='groovy')/\$value"
+        )
+        callback(resource)
+    }
+
     fun getScriptCollectionResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
         val resources = this.getResourcesInternal(
             artifactId,
             "/ScriptCollectionDesigntimeArtifacts(Id='${artifactId}',Version='active')/Resources"
         )
         callback(resources)
+    }
+
+    fun getScriptCollectionResource(artifactId: String, resourceName: String, callback: (String) -> Unit) {
+        val resource = this.getResourceInternal(
+            "/ScriptCollectionDesigntimeArtifacts(Id='${artifactId}',Version='active')/Resources(Name='${resourceName}',ResourceType='groovy')/\$value"
+        )
+        callback(resource)
     }
 
     fun createResource(artifactId: String, name: String, content: String, callback: (Boolean) -> Unit) {
@@ -406,6 +420,17 @@ class CpiService(
             resources.add(resource)
         }
         return resources
+    }
+
+    private fun getResourceInternal(endpoint: String): String {
+        val call = this.makeAuthenticatedRequest(
+            "GET",
+            endpoint
+        )
+        val response = call.execute()
+        val result = response.body.string()
+        response.body.close()
+        return result
     }
 
     fun createResourceInternal(

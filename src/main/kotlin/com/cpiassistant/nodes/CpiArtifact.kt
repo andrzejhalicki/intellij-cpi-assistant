@@ -41,6 +41,12 @@ open class CpiArtifact(override val id: String, override val name: String, open 
         }
     }
 
+    open fun downloadResource(name: String, callback: (String) -> Unit) {
+        this.service.getResource(this.id, name) { r ->
+            callback(r)
+        }
+    }
+
     open fun deploy() {
         this.service.deployArtifact(this.id) { taskId ->
             val service = this.service

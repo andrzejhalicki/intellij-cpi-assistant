@@ -32,5 +32,6 @@ object MyIcons {
     val Loading = AnimatedIcon.Default()
     @JvmField
     val ScriptCollection = IconLoader.getIcon("/icons/listFiles.svg", javaClass)
-
+    @JvmField
+    val Download = IconLoader.getIcon("/icons/download.svg", javaClass)
 }

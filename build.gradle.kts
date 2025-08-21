@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.cpiassistant"
-version = "1.0.4"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
@@ -40,7 +40,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("222")
-        untilBuild.set("243.*")
+        untilBuild.set("251.*")
     }
 
     signPlugin {

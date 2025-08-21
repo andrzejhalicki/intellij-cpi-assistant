@@ -1,13 +1,15 @@
+import com.intellij.credentialStore.CredentialAttributes
 import com.intellij.credentialStore.Credentials
+import com.intellij.credentialStore.generateServiceName
 import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.remoteServer.util.CloudConfigurationUtil.createCredentialAttributes
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Tag
+
 
 @Service(Service.Level.PROJECT)
 @State(
@@ -58,6 +60,12 @@ public class TenantStateComponent : PersistentStateComponent<TenantStateComponen
             }
             tenant
         }
+    }
+
+    private fun createCredentialAttributes(url: String, clientID: String): CredentialAttributes {
+        return CredentialAttributes(
+            generateServiceName(url, clientID)
+        )
     }
 }
 
