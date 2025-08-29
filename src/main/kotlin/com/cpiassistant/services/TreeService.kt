@@ -10,8 +10,12 @@ import com.cpiassistant.toolWindow.MyTreeModel
 import com.cpiassistant.toolWindow.TreeCellRenderer
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.treeStructure.Tree
 import java.awt.event.MouseEvent
@@ -46,58 +50,19 @@ class TreeService(private val project: Project) {
 
         tree.addMouseListener(object : MouseListener {
             override fun mouseClicked(e: MouseEvent?) {
-                if (!SwingUtilities.isRightMouseButton(e)) {
+
+                if (e == null) return
+
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    handleRightClick(e,tree)
                     return
                 }
 
-                val path = tree.getPathForLocation(e!!.x, e!!.y)
-                if (path?.getLastPathComponent() == null) {
+                if (SwingUtilities.isLeftMouseButton(e) && e.clickCount == 2) {
+                    handleDoubleClick(e,tree)
                     return
                 }
 
-                val nodeHoveredOver = path.getLastPathComponent() as DefaultMutableTreeNode
-                val actionManager = ActionManager.getInstance()
-                if (nodeHoveredOver.userObject is CpiArtifact) {
-                    val actionGroup =
-                        actionManager.getAction("com.cpiassistant.actions.ArtifactActionGroup") as ActionGroup
-                    val popupMenu = actionManager.createActionPopupMenu(
-                        "com.cpiassistant.actions.ArtifactActionGroup",
-                        actionGroup
-                    )
-                    tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
-                    popupMenu.component.show(e?.component, e!!.x, e.y)
-                    return
-                } else if (nodeHoveredOver.userObject is CpiPackage) {
-                    val actionGroup =
-                        actionManager.getAction("com.cpiassistant.actions.PackageActionGroup") as ActionGroup
-                    val popupMenu = actionManager.createActionPopupMenu(
-                        "com.cpiassistant.actions.PackageActionGroup",
-                        actionGroup
-                    )
-                    tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
-                    popupMenu.component.show(e?.component, e!!.x, e.y)
-                    return
-                } else if (nodeHoveredOver.userObject is Tenant) {
-                    val actionGroup =
-                        actionManager.getAction("com.cpiassistant.actions.TenantActionGroup") as ActionGroup
-                    val popupMenu = actionManager.createActionPopupMenu(
-                        "com.cpiassistant.actions.TenantActionGroup",
-                        actionGroup
-                    )
-                    tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
-                    popupMenu.component.show(e?.component, e!!.x, e.y)
-                    return
-                } else if (nodeHoveredOver.userObject is CpiResource) {
-                    val actionGroup =
-                        actionManager.getAction("com.cpiassistant.actions.ResourceActionGroup") as ActionGroup
-                    val popupMenu = actionManager.createActionPopupMenu(
-                        "com.cpiassistant.actions.ResourceActionGroup",
-                        actionGroup
-                    )
-                    tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
-                    popupMenu.component.show(e?.component, e!!.x, e.y)
-                    return
-                }
             }
 
             override fun mousePressed(e: MouseEvent?) {
@@ -115,6 +80,7 @@ class TreeService(private val project: Project) {
             override fun mouseExited(e: MouseEvent?) {
 
             }
+
         })
         val renderer: DefaultTreeCellRenderer = TreeCellRenderer()
         tree.setCellRenderer(renderer);
@@ -163,5 +129,73 @@ class TreeService(private val project: Project) {
             cpiPackage.isLoaded = true
         }
         cpiTenant.isLoaded = true
+    }
+
+    private fun handleRightClick(e: MouseEvent?, tree: Tree) {
+        val path = tree.getPathForLocation(e!!.x, e!!.y)
+        if (path?.getLastPathComponent() == null) {
+            return
+        }
+
+        val nodeHoveredOver = path.getLastPathComponent() as DefaultMutableTreeNode
+        val actionManager = ActionManager.getInstance()
+        if (nodeHoveredOver.userObject is CpiArtifact) {
+            val actionGroup =
+                actionManager.getAction("com.cpiassistant.actions.ArtifactActionGroup") as ActionGroup
+            val popupMenu = actionManager.createActionPopupMenu(
+                "com.cpiassistant.actions.ArtifactActionGroup",
+                actionGroup
+            )
+            tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
+            popupMenu.component.show(e?.component, e!!.x, e.y)
+            return
+        } else if (nodeHoveredOver.userObject is CpiPackage) {
+            val actionGroup =
+                actionManager.getAction("com.cpiassistant.actions.PackageActionGroup") as ActionGroup
+            val popupMenu = actionManager.createActionPopupMenu(
+                "com.cpiassistant.actions.PackageActionGroup",
+                actionGroup
+            )
+            tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
+            popupMenu.component.show(e?.component, e!!.x, e.y)
+            return
+        } else if (nodeHoveredOver.userObject is Tenant) {
+            val actionGroup =
+                actionManager.getAction("com.cpiassistant.actions.TenantActionGroup") as ActionGroup
+            val popupMenu = actionManager.createActionPopupMenu(
+                "com.cpiassistant.actions.TenantActionGroup",
+                actionGroup
+            )
+            tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
+            popupMenu.component.show(e?.component, e!!.x, e.y)
+            return
+        } else if (nodeHoveredOver.userObject is CpiResource) {
+            val actionGroup =
+                actionManager.getAction("com.cpiassistant.actions.ResourceActionGroup") as ActionGroup
+            val popupMenu = actionManager.createActionPopupMenu(
+                "com.cpiassistant.actions.ResourceActionGroup",
+                actionGroup
+            )
+            tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
+            popupMenu.component.show(e?.component, e!!.x, e.y)
+            return
+        }
+    }
+
+    private fun handleDoubleClick(e: MouseEvent?, tree: Tree) {
+        val path = tree.getPathForLocation(e!!.x, e!!.y)
+        if (path?.getLastPathComponent() == null) {
+            return
+        }
+
+        val nodeHoveredOver = path.getLastPathComponent() as DefaultMutableTreeNode
+        if (nodeHoveredOver.userObject is CpiResource) {
+            val resource = nodeHoveredOver.userObject as CpiResource
+            val file = LocalFileSystem.getInstance().findFileByPath(resource.path)
+            if (file == null || !file.exists()) {
+                return
+            }
+            FileEditorManager.getInstance(project).openFile(file, true)
+        }
     }
 }
