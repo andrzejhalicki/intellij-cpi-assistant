@@ -31,6 +31,8 @@ class TreeCellRenderer() : DefaultTreeCellRenderer() {
                 if (userObject.isLoaded) {
                     renderer.remove(0)
                 }
+            } else if (userObject is Favorites) {
+                buildFavorites(renderer, userObject)
             } else if (userObject is CpiPackage) {
                 buildPackage(renderer, userObject)
                 if (userObject.isLoaded) {
@@ -64,6 +66,11 @@ class TreeCellRenderer() : DefaultTreeCellRenderer() {
         renderer.add(JBLabel(MyIcons.Loading))
         renderer.add(JBLabel(MyIcons.Tenant))
         renderer.add(JLabel(tenant.name));
+    }
+
+    private fun buildFavorites(renderer: JPanel, favorites: Favorites) {
+        renderer.add(JBLabel(MyIcons.Star))
+        renderer.add(JLabel(favorites.name));
     }
 
     private fun buildPackage(renderer: JPanel, cpiPackage: CpiPackage) {

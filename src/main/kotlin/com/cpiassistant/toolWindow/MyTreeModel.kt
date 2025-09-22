@@ -22,7 +22,7 @@ class MyTreeModel() {
         val tenantStateComponent = project?.service<TenantStateComponent>()
         val tenantsState = tenantStateComponent?.getTenants()
         tenantsState?.forEach { tenant ->
-            val newTenant = Tenant(tenant.name,tenant.name,CpiService(tenant.clientID, tenant.clientSecret, tenant.url, tenant.tokenUrl))
+            val newTenant = Tenant(tenant.name,tenant.name,  CpiService(tenant.clientID, tenant.clientSecret, tenant.url, tenant.tokenUrl), tenant.favoritePackages, tenantStateComponent)
             val isAuthenticated = newTenant.service.authenticate();
             newTenant.isConnected = isAuthenticated
             this.tenants.add(newTenant)

@@ -4,26 +4,27 @@ import CustomDataProvider
 import com.cpiassistant.nodes.CpiArtifact
 import com.cpiassistant.nodes.CpiPackage
 import com.cpiassistant.nodes.CpiResource
+import com.cpiassistant.nodes.Favorites
 import com.cpiassistant.nodes.Tenant
 import com.cpiassistant.toolWindow.MyTreeCellEditor
 import com.cpiassistant.toolWindow.MyTreeModel
 import com.cpiassistant.toolWindow.TreeCellRenderer
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.treeStructure.Tree
+import com.jetbrains.rd.framework.base.deepClonePolymorphic
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeCellRenderer
 import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.MutableTreeNode
 
 @Service(Service.Level.PROJECT)
 class TreeService(private val project: Project) {
@@ -92,43 +93,59 @@ class TreeService(private val project: Project) {
     fun updateTree(tenant: DefaultMutableTreeNode) {
 
         val cpiTenant = tenant.userObject as Tenant
-        cpiTenant.getPackages { ps ->
-            ps.forEach {
-                tenant.add(DefaultMutableTreeNode(it))
+        val favoritesNode = DefaultMutableTreeNode(Favorites())
+        tenant.add(favoritesNode)
+        cpiTenant.getPackages { packages ->
+            packages.forEach { ps ->
+                tenant.add(DefaultMutableTreeNode(ps))
             }
+        }
+        cpiTenant.favoritePackages.forEach { favPackage ->
+            favoritesNode.add(DefaultMutableTreeNode(favPackage))
         }
         tenant.children().asIterator().forEach { p ->
             val packageNode = p as DefaultMutableTreeNode
-            val cpiPackage = packageNode.userObject as CpiPackage
-            cpiPackage.getArtifacts(cpiPackage.id) { artifacts ->
-                artifacts.forEach { artifact ->
-                    val artifactNode = DefaultMutableTreeNode(artifact)
-                    packageNode.add(artifactNode)
-                    artifact.getResources(artifact.id) { resources ->
-                        resources.forEach { resource ->
-                            artifactNode.add(DefaultMutableTreeNode(resource))
-                            resource.isLoaded = true
-                        }
-                    }
-                    artifact.isLoaded = true
+            if (packageNode.userObject is Favorites) {
+                packageNode.children().asIterator().forEach { fp ->
+                    val favPackageNode = fp as DefaultMutableTreeNode
+                    loadPackage(favPackageNode)
                 }
+                return@forEach
             }
-            cpiPackage.getScriptCollections(cpiPackage.id) { scriptCollections ->
-                scriptCollections.forEach { scriptCollection ->
-                    val collectionNode = DefaultMutableTreeNode(scriptCollection)
-                    packageNode.add(collectionNode)
-                    scriptCollection.getResources(scriptCollection.id) { resources ->
-                        resources.forEach { resource ->
-                            collectionNode.add(DefaultMutableTreeNode(resource))
-                            resource.isLoaded = true
-                        }
-                    }
-                    scriptCollection.isLoaded = true
-                }
-            }
-            cpiPackage.isLoaded = true
+            loadPackage(packageNode)
         }
         cpiTenant.isLoaded = true
+    }
+
+    private fun loadPackage(packageNode: DefaultMutableTreeNode) {
+        val cpiPackage = packageNode.userObject as CpiPackage
+        cpiPackage.getArtifacts(cpiPackage.id) { artifacts ->
+            artifacts.forEach { artifact ->
+                val artifactNode = DefaultMutableTreeNode(artifact)
+                packageNode.add(artifactNode)
+                artifact.getResources(artifact.id) { resources ->
+                    resources.forEach { resource ->
+                        artifactNode.add(DefaultMutableTreeNode(resource))
+                        resource.isLoaded = true
+                    }
+                }
+                artifact.isLoaded = true
+            }
+        }
+        cpiPackage.getScriptCollections(cpiPackage.id) { scriptCollections ->
+            scriptCollections.forEach { scriptCollection ->
+                val collectionNode = DefaultMutableTreeNode(scriptCollection)
+                packageNode.add(collectionNode)
+                scriptCollection.getResources(scriptCollection.id) { resources ->
+                    resources.forEach { resource ->
+                        collectionNode.add(DefaultMutableTreeNode(resource))
+                        resource.isLoaded = true
+                    }
+                }
+                scriptCollection.isLoaded = true
+            }
+        }
+        cpiPackage.isLoaded = true
     }
 
     private fun handleRightClick(e: MouseEvent?, tree: Tree) {

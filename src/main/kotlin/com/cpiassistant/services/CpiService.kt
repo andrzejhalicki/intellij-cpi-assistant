@@ -11,7 +11,6 @@ import com.intellij.notification.Notifications
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import kotlinx.serialization.*
 import okhttp3.*
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -21,7 +20,6 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.IOException
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 class CpiService(
     var clientID: String,

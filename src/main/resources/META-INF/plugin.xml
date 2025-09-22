@@ -75,6 +75,13 @@
                 icon="com.cpiassistant.MyIcons.Delete">
             <add-to-group group-id="com.cpiassistant.actions.TenantActionGroup"/>
         </action>
+        <action id="com.cpiassistant.actions.AddToFavoritesAction"
+                class="com.cpiassistant.actions.AddPackageToFavoritesAction"
+                text="Add to Favorites"
+                description="Add to Favorites"
+                icon="com.cpiassistant.MyIcons.Star">
+            <add-to-group group-id="com.cpiassistant.actions.PackageActionGroup"/>
+        </action>
         <action id="com.cpiassistant.actions.DeployAction"
                 class="com.cpiassistant.actions.DeployAction"
                 text="Deploy"

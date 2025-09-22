@@ -62,6 +62,15 @@ public class TenantStateComponent : PersistentStateComponent<TenantStateComponen
         }
     }
 
+    fun addFavoritePackage(tenantName: String, packageId: String) {
+        val tenant = state.tenants.find { it.name == tenantName }
+        tenant?.let {
+            if (!it.favoritePackages.contains(packageId)) {
+                it.favoritePackages.add(packageId)
+            }
+        }
+    }
+
     private fun createCredentialAttributes(url: String, clientID: String): CredentialAttributes {
         return CredentialAttributes(
             generateServiceName(url, clientID)
@@ -75,5 +84,6 @@ data class TenantInfo(
     @Attribute var url: String = "",
     @Attribute var tokenUrl: String = "",
     @Attribute var clientID: String = "",
-    @Attribute var clientSecret: String = ""
+    @Attribute var clientSecret: String = "",
+    @Tag("favoritePackages") var favoritePackages: MutableList<String> = mutableListOf()
 )
