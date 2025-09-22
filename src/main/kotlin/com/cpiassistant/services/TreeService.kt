@@ -167,6 +167,18 @@ class TreeService(private val project: Project) {
             popupMenu.component.show(e?.component, e!!.x, e.y)
             return
         } else if (nodeHoveredOver.userObject is CpiPackage) {
+            val parent = nodeHoveredOver.parent as DefaultMutableTreeNode
+            if (parent.userObject is Favorites) {
+                val actionGroup =
+                    actionManager.getAction("com.cpiassistant.actions.FavoritePackageActionGroup") as ActionGroup
+                val popupMenu = actionManager.createActionPopupMenu(
+                    "com.cpiassistant.actions.FavoritePackageActionGroup",
+                    actionGroup
+                )
+                tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
+                popupMenu.component.show(e?.component, e!!.x, e.y)
+                return
+            }
             val actionGroup =
                 actionManager.getAction("com.cpiassistant.actions.PackageActionGroup") as ActionGroup
             val popupMenu = actionManager.createActionPopupMenu(

@@ -68,6 +68,10 @@
                text="Package Actions"
                popup="true">
         </group>
+        <group id="com.cpiassistant.actions.FavoritePackageActionGroup"
+               text="Favorite Package Actions"
+               popup="true">
+        </group>
         <action id="com.cpiassistant.actions.DeleteTenantAction"
                 class="com.cpiassistant.actions.DeleteTenantAction"
                 text="Delete"
@@ -75,12 +79,19 @@
                 icon="com.cpiassistant.MyIcons.Delete">
             <add-to-group group-id="com.cpiassistant.actions.TenantActionGroup"/>
         </action>
-        <action id="com.cpiassistant.actions.AddToFavoritesAction"
+        <action id="com.cpiassistant.actions.AddPackageToFavoritesAction"
                 class="com.cpiassistant.actions.AddPackageToFavoritesAction"
                 text="Add to Favorites"
                 description="Add to Favorites"
                 icon="com.cpiassistant.MyIcons.Star">
             <add-to-group group-id="com.cpiassistant.actions.PackageActionGroup"/>
+        </action>
+        <action id="com.cpiassistant.actions.RemovePackageFromFavoritesAction"
+                class="com.cpiassistant.actions.RemovePackageFromFavoritesAction"
+                text="Remove from Favorites"
+                description="Remove from Favorites"
+                icon="com.cpiassistant.MyIcons.Delete">
+            <add-to-group group-id="com.cpiassistant.actions.FavoritePackageActionGroup"/>
         </action>
         <action id="com.cpiassistant.actions.DeployAction"
                 class="com.cpiassistant.actions.DeployAction"

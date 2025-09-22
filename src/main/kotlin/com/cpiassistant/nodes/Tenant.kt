@@ -27,4 +27,13 @@ class Tenant(override val id: String, override val name: String, cpiService: Cpi
         }
     }
 
+    fun removePackageFromFavorites(cpiPackage: CpiPackage) {
+        this.favoritePackages.removeIf { it.id == cpiPackage.id }
+        tenantStateComponent.removeFavoritePackage(this.id, cpiPackage.id)
+    }
+
+    fun isFavorite(cpiPackage: CpiPackage): Boolean {
+        return this.favoritePackages.any { it.id == cpiPackage.id }
+    }
+
 }

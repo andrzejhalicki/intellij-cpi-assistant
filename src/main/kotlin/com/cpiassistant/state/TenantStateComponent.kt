@@ -71,6 +71,13 @@ public class TenantStateComponent : PersistentStateComponent<TenantStateComponen
         }
     }
 
+    fun removeFavoritePackage(tenantName: String, packageId: String) {
+        val tenant = state.tenants.find { it.name == tenantName }
+        tenant?.let {
+            it.favoritePackages.remove(packageId)
+        }
+    }
+
     private fun createCredentialAttributes(url: String, clientID: String): CredentialAttributes {
         return CredentialAttributes(
             generateServiceName(url, clientID)
