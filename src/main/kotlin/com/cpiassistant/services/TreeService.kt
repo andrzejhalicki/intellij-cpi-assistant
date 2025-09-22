@@ -17,19 +17,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.treeStructure.Tree
-import com.jetbrains.rd.framework.base.deepClonePolymorphic
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeCellRenderer
 import javax.swing.tree.DefaultTreeModel
-import javax.swing.tree.MutableTreeNode
 
 @Service(Service.Level.PROJECT)
 class TreeService(private val project: Project) {
 
-    public var tree: Tree = Tree()
+    var tree: Tree = Tree()
 
     init {
 
@@ -47,7 +45,7 @@ class TreeService(private val project: Project) {
             showsRootHandles = true
         }
 
-        tree.putClientProperty(AnimatedIcon.ANIMATION_IN_RENDERER_ALLOWED, true);
+        tree.putClientProperty(AnimatedIcon.ANIMATION_IN_RENDERER_ALLOWED, true)
 
         tree.addMouseListener(object : MouseListener {
             override fun mouseClicked(e: MouseEvent?) {
@@ -84,7 +82,7 @@ class TreeService(private val project: Project) {
 
         })
         val renderer: DefaultTreeCellRenderer = TreeCellRenderer()
-        tree.setCellRenderer(renderer);
+        tree.setCellRenderer(renderer)
         tree.cellEditor = MyTreeCellEditor(tree, renderer)
 
         return tree
@@ -149,7 +147,7 @@ class TreeService(private val project: Project) {
     }
 
     private fun handleRightClick(e: MouseEvent?, tree: Tree) {
-        val path = tree.getPathForLocation(e!!.x, e!!.y)
+        val path = tree.getPathForLocation(e!!.x, e.y)
         if (path?.getLastPathComponent() == null) {
             return
         }

@@ -50,7 +50,7 @@
     <actions>
         <action id="com.cpiassistant.actions.AddTenant"
                 class="com.cpiassistant.actions.AddTenant"
-                text="Add tenant"
+                text="Add Tenant"
                 icon="com.cpiassistant.MyIcons.Add"/>
         <group id="com.cpiassistant.actions.ArtifactActionGroup"
                text="Artifact Actions"
@@ -102,7 +102,7 @@
         </action>
         <action id="com.cpiassistant.actions.AddResourceAction"
                 class="com.cpiassistant.actions.AddResourceAction"
-                text="Add script"
+                text="Add Script"
                 description="Add script"
                 icon="com.cpiassistant.MyIcons.Add">
             <add-to-group group-id="com.cpiassistant.actions.ArtifactActionGroup"/>
@@ -116,29 +116,29 @@
         </action>
         <action id="com.cpiassistant.actions.SyncAllResourcesAction"
                 class="com.cpiassistant.actions.SyncAllResourcesAction"
-                text="Sync all scripts"
+                text="Sync All Scripts"
                 description="Sync all scripts"
                 icon="com.cpiassistant.MyIcons.Download">
             <add-to-group group-id="com.cpiassistant.actions.ArtifactActionGroup"/>
         </action>
         <action id="com.cpiassistant.actions.UpdateResourceAction"
                 class="com.cpiassistant.actions.UpdateResourceAction"
-                text="Update in tenant"
+                text="Update In Tenant"
                 description="Update in tenant"
                 icon="com.cpiassistant.MyIcons.Refresh">
             <add-to-group group-id="com.cpiassistant.actions.ResourceActionGroup"/>
         </action>
         <action id="com.cpiassistant.actions.MapResourceAction"
                 class="com.cpiassistant.actions.MapResourceAction"
-                text="Map script"
+                text="Map Script"
                 description="Map script"
                 icon="com.cpiassistant.MyIcons.AddFile">
             <add-to-group group-id="com.cpiassistant.actions.ResourceActionGroup"/>
         </action>
         <action id="com.cpiassistant.actions.GetResourceAction"
                 class="com.cpiassistant.actions.GetResourceAction"
-                text="Sync from tenant"
-                description="Sync from tenant"
+                text="Sync from Tenant"
+                description="Sync from Tenant"
                 icon="com.cpiassistant.MyIcons.Download">
             <add-to-group group-id="com.cpiassistant.actions.ResourceActionGroup"/>
         </action>
