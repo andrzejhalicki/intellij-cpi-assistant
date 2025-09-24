@@ -1,0 +1,153 @@
+name: Claude Code Review
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  claude_review:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      github.event_name == 'pull_request' ||
+      github.event_name == 'pull_request_review'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  automated_review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR details
+        id: pr_info
+        run: |
+          echo "pr_number=${{ github.event.number }}" >> $GITHUB_OUTPUT
+          echo "pr_title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          echo "pr_author=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
+
+      - name: Auto-request Claude review
+        run: |
+          gh pr comment ${{ steps.pr_info.outputs.pr_number }} --body "@claude Please review this PR for:
+
+          🔍 **Code Quality Review**
+          - Check Kotlin coding standards and best practices
+          - Verify IntelliJ plugin development patterns
+          - Ensure proper error handling and null safety
+          - Review resource management (HTTP connections, etc.)
+
+          🏗️ **Architecture & Design**
+          - Validate separation of concerns
+          - Check for proper dependency injection patterns
+          - Review API usage and integration patterns
+
+          🧪 **Testing & Reliability**
+          - Suggest test cases if missing
+          - Identify potential edge cases
+          - Check for proper exception handling
+
+          📚 **Documentation**
+          - Ensure code is self-documenting
+          - Check if complex logic needs comments
+          - Verify public API documentation
+
+          Please provide specific suggestions for improvements where applicable."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  kotlin_specific_checks:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Run Kotlin lint checks
+        run: |
+          # Basic static analysis for Kotlin files
+          echo "🔍 Checking Kotlin files..."
+
+          # Check for common issues
+          KOTLIN_FILES=$(find src -name "*.kt" -type f)
+
+          if [ -n "$KOTLIN_FILES" ]; then
+            echo "Found Kotlin files to analyze:"
+            echo "$KOTLIN_FILES"
+
+            # Create summary for Claude
+            echo "## 📊 Kotlin Code Analysis Summary" > kotlin-analysis.md
+            echo "" >> kotlin-analysis.md
+
+            # Count files and lines
+            FILE_COUNT=$(echo "$KOTLIN_FILES" | wc -l)
+            TOTAL_LINES=$(cat $KOTLIN_FILES | wc -l)
+
+            echo "- **Files modified**: $FILE_COUNT" >> kotlin-analysis.md
+            echo "- **Total lines**: $TOTAL_LINES" >> kotlin-analysis.md
+            echo "" >> kotlin-analysis.md
+
+            # Check for potential issues
+            echo "### 🚨 Potential Issues Found:" >> kotlin-analysis.md
+
+            # Check for TODO/FIXME comments
+            TODO_COUNT=$(grep -n "TODO\|FIXME" $KOTLIN_FILES | wc -l || echo "0")
+            if [ "$TODO_COUNT" -gt 0 ]; then
+              echo "- **TODO/FIXME comments**: $TODO_COUNT found" >> kotlin-analysis.md
+            fi
+
+            # Check for System.out.println (should use proper logging)
+            PRINTLN_COUNT=$(grep -n "System.out.println\|println(" $KOTLIN_FILES | wc -l || echo "0")
+            if [ "$PRINTLN_COUNT" -gt 0 ]; then
+              echo "- **Debug print statements**: $PRINTLN_COUNT found (consider using proper logging)" >> kotlin-analysis.md
+            fi
+
+            # Check for hardcoded strings that might need i18n
+            HARDCODED_STRINGS=$(grep -n '"[^"]*[a-zA-Z][^"]*"' $KOTLIN_FILES | grep -v "import\|package\|@\|//" | wc -l || echo "0")
+            if [ "$HARDCODED_STRINGS" -gt 10 ]; then
+              echo "- **Hardcoded strings**: $HARDCODED_STRINGS found (consider i18n for user-facing text)" >> kotlin-analysis.md
+            fi
+
+            echo "" >> kotlin-analysis.md
+            echo "💡 **Recommendation**: Have Claude review these files for IntelliJ plugin best practices and Kotlin idioms." >> kotlin-analysis.md
+
+            # Post summary as PR comment
+            gh pr comment ${{ github.event.number }} --body-file kotlin-analysis.md
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
