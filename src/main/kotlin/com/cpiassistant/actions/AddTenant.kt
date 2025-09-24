@@ -14,10 +14,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.wm.ToolWindowManager
 import org.jetbrains.annotations.NotNull
-import java.awt.Dimension
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
@@ -45,7 +43,9 @@ class AddTenant : AnAction() {
 
                 val newTenant = Tenant(
                     dialog.getName(), dialog.getName(),
-                    CpiService(dialog.getClientId(), dialog.getClientSecret(), dialog.getURL(), dialog.getTokenUrl())
+                    CpiService(dialog.getClientId(), dialog.getClientSecret(), dialog.getURL(), dialog.getTokenUrl()),
+                    mutableListOf<String>(),
+                    tenantStateComponent!!
                 )
 
                 val isAuthenticated = newTenant.service.authenticate()

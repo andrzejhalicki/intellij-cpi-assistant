@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="TenantState">
+    <option name="tenants">
+      <list>
+        <TenantInfo name="Int4" url="https://int4-cloud-integration-cf-u0ujl6hs.it-cpi018.cfapps.eu10-003.hana.ondemand.com" tokenUrl="https://int4-cloud-integration-cf-u0ujl6hs.authentication.eu10.hana.ondemand.com/oauth/token" clientID="sb-ad682a55-d5a1-49ec-8cf4-8e837353205b!b152182|it!b117912" />
+      </list>
+    </option>
+  </component>
+</project>

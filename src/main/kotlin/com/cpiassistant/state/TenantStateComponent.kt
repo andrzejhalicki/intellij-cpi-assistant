@@ -1,13 +1,15 @@
+import com.intellij.credentialStore.CredentialAttributes
 import com.intellij.credentialStore.Credentials
+import com.intellij.credentialStore.generateServiceName
 import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.remoteServer.util.CloudConfigurationUtil.createCredentialAttributes
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Tag
+
 
 @Service(Service.Level.PROJECT)
 @State(
@@ -59,6 +61,28 @@ public class TenantStateComponent : PersistentStateComponent<TenantStateComponen
             tenant
         }
     }
+
+    fun addFavoritePackage(tenantName: String, packageId: String) {
+        val tenant = state.tenants.find { it.name == tenantName }
+        tenant?.let {
+            if (!it.favoritePackages.contains(packageId)) {
+                it.favoritePackages.add(packageId)
+            }
+        }
+    }
+
+    fun removeFavoritePackage(tenantName: String, packageId: String) {
+        val tenant = state.tenants.find { it.name == tenantName }
+        tenant?.let {
+            it.favoritePackages.remove(packageId)
+        }
+    }
+
+    private fun createCredentialAttributes(url: String, clientID: String): CredentialAttributes {
+        return CredentialAttributes(
+            generateServiceName(url, clientID)
+        )
+    }
 }
 
 @Tag("TenantInfo")
@@ -67,5 +91,6 @@ data class TenantInfo(
     @Attribute var url: String = "",
     @Attribute var tokenUrl: String = "",
     @Attribute var clientID: String = "",
-    @Attribute var clientSecret: String = ""
+    @Attribute var clientSecret: String = "",
+    @Tag("favoritePackages") var favoritePackages: MutableList<String> = mutableListOf()
 )
