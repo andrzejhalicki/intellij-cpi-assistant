@@ -10,6 +10,7 @@ class CpiScriptCollection(override val id: String, override val name: String, ov
                           override var isLoaded: Boolean = false
 ): CpiArtifact(id, name, service, isLoaded) {
     private val resources = mutableListOf<CpiResource>()
+    override val type = "ScriptCollection"
 
     override fun getResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
         if(!this.resources.isEmpty()){
