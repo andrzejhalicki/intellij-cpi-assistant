@@ -7,6 +7,11 @@ on:
       - 'fix/**'
       - dev
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   create_pull_request:
     runs-on: ubuntu-latest
