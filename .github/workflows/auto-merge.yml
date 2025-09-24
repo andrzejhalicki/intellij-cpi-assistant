@@ -1,0 +1,194 @@
+name: Auto Merge Pull Requests
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, synchronize, opened, edited, ready_for_review]
+  pull_request_review:
+    types: [submitted]
+  check_suite:
+    types: [completed]
+  status: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  auto_merge:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' ||
+      github.event_name == 'pull_request_review' ||
+      github.event_name == 'check_suite' ||
+      github.event_name == 'status'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get PR info
+        id: pr_info
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            PR_NUMBER=${{ github.event.number }}
+          elif [ "${{ github.event_name }}" = "pull_request_review" ]; then
+            PR_NUMBER=${{ github.event.pull_request.number }}
+          else
+            # For check_suite and status events, find PR from commit
+            PR_NUMBER=$(gh pr list --search "${{ github.sha }}" --json number --jq '.[0].number // empty')
+          fi
+
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "No PR found for this event"
+            echo "should_process=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "should_process=true" >> $GITHUB_OUTPUT
+
+          # Get PR details
+          PR_DATA=$(gh pr view $PR_NUMBER --json title,author,labels,isDraft,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup)
+
+          echo "pr_title=$(echo "$PR_DATA" | jq -r '.title')" >> $GITHUB_OUTPUT
+          echo "pr_author=$(echo "$PR_DATA" | jq -r '.author.login')" >> $GITHUB_OUTPUT
+          echo "is_draft=$(echo "$PR_DATA" | jq -r '.isDraft')" >> $GITHUB_OUTPUT
+          echo "mergeable=$(echo "$PR_DATA" | jq -r '.mergeable')" >> $GITHUB_OUTPUT
+          echo "merge_state=$(echo "$PR_DATA" | jq -r '.mergeStateStatus')" >> $GITHUB_OUTPUT
+          echo "review_decision=$(echo "$PR_DATA" | jq -r '.reviewDecision')" >> $GITHUB_OUTPUT
+
+          # Check for auto-merge labels
+          LABELS=$(echo "$PR_DATA" | jq -r '.labels[].name' | tr '\n' ',' | sed 's/,$//')
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+
+          # Check if auto-merge is enabled
+          AUTO_MERGE_ENABLED=false
+          if echo "$LABELS" | grep -q "auto-merge"; then
+            AUTO_MERGE_ENABLED=true
+          fi
+          echo "auto_merge_enabled=$AUTO_MERGE_ENABLED" >> $GITHUB_OUTPUT
+
+          # Check for blocking labels
+          BLOCKING_LABELS="do-not-merge,wip,work-in-progress,hold"
+          HAS_BLOCKING_LABEL=false
+          for label in $(echo "$BLOCKING_LABELS" | tr ',' ' '); do
+            if echo "$LABELS" | grep -q "$label"; then
+              HAS_BLOCKING_LABEL=true
+              break
+            fi
+          done
+          echo "has_blocking_label=$HAS_BLOCKING_LABEL" >> $GITHUB_OUTPUT
+
+          # Check status checks
+          STATUS_CHECKS=$(echo "$PR_DATA" | jq -r '.statusCheckRollup[]?.state // empty' | sort -u)
+          ALL_CHECKS_PASSED=true
+          if echo "$STATUS_CHECKS" | grep -q "FAILURE\|PENDING\|ERROR"; then
+            ALL_CHECKS_PASSED=false
+          fi
+          echo "all_checks_passed=$ALL_CHECKS_PASSED" >> $GITHUB_OUTPUT
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check merge eligibility
+        id: check_eligibility
+        if: steps.pr_info.outputs.should_process == 'true'
+        run: |
+          ELIGIBLE=true
+          REASON=""
+
+          # Check if PR is draft
+          if [ "${{ steps.pr_info.outputs.is_draft }}" = "true" ]; then
+            ELIGIBLE=false
+            REASON="PR is in draft mode"
+          fi
+
+          # Check for blocking labels
+          if [ "${{ steps.pr_info.outputs.has_blocking_label }}" = "true" ]; then
+            ELIGIBLE=false
+            REASON="PR has blocking labels (do-not-merge, wip, etc.)"
+          fi
+
+          # Check if auto-merge is enabled
+          if [ "${{ steps.pr_info.outputs.auto_merge_enabled }}" = "false" ]; then
+            ELIGIBLE=false
+            REASON="Auto-merge label not present"
+          fi
+
+          # Check merge state
+          if [ "${{ steps.pr_info.outputs.mergeable }}" = "CONFLICTING" ]; then
+            ELIGIBLE=false
+            REASON="PR has merge conflicts"
+          fi
+
+          # Check status checks
+          if [ "${{ steps.pr_info.outputs.all_checks_passed }}" = "false" ]; then
+            ELIGIBLE=false
+            REASON="Not all status checks have passed"
+          fi
+
+          # Check review requirements (at least one approval, no requested changes)
+          REVIEW_DECISION="${{ steps.pr_info.outputs.review_decision }}"
+          if [ "$REVIEW_DECISION" != "APPROVED" ]; then
+            if [ "$REVIEW_DECISION" = "REVIEW_REQUIRED" ]; then
+              REASON="PR requires review approval"
+            elif [ "$REVIEW_DECISION" = "CHANGES_REQUESTED" ]; then
+              REASON="PR has requested changes"
+            else
+              REASON="PR review status unclear: $REVIEW_DECISION"
+            fi
+            ELIGIBLE=false
+          fi
+
+          echo "eligible=$ELIGIBLE" >> $GITHUB_OUTPUT
+          echo "reason=$REASON" >> $GITHUB_OUTPUT
+
+      - name: Enable auto-merge
+        if: |
+          steps.pr_info.outputs.should_process == 'true' &&
+          steps.check_eligibility.outputs.eligible == 'true'
+        run: |
+          echo "🚀 Enabling auto-merge for PR #${{ steps.pr_info.outputs.pr_number }}"
+
+          # Enable auto-merge with squash merge method
+          gh pr merge ${{ steps.pr_info.outputs.pr_number }} --auto --squash
+
+          # Add comment about auto-merge being enabled
+          gh pr comment ${{ steps.pr_info.outputs.pr_number }} --body "🤖 **Auto-merge enabled** for this PR. It will be automatically merged when all conditions are met:
+
+          ✅ All status checks pass
+          ✅ Required reviews approved
+          ✅ No merge conflicts
+          ✅ No blocking labels
+
+          If you need to disable auto-merge, remove the \`auto-merge\` label or run: \`gh pr merge ${{ steps.pr_info.outputs.pr_number }} --disable-auto\`"
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment why merge was not enabled
+        if: |
+          steps.pr_info.outputs.should_process == 'true' &&
+          steps.check_eligibility.outputs.eligible == 'false'
+        run: |
+          echo "❌ Auto-merge not enabled for PR #${{ steps.pr_info.outputs.pr_number }}: ${{ steps.check_eligibility.outputs.reason }}"
+
+          # Only comment if the reason is actionable
+          if [[ "${{ steps.check_eligibility.outputs.reason }}" == *"Auto-merge label not present"* ]]; then
+            exit 0  # Don't spam with comments about missing label
+          fi
+
+          gh pr comment ${{ steps.pr_info.outputs.pr_number }} --body "⏸️ **Auto-merge not enabled**
+
+          **Reason**: ${{ steps.check_eligibility.outputs.reason }}
+
+          To enable auto-merge:
+          1. Add the \`auto-merge\` label to this PR
+          2. Ensure all status checks pass
+          3. Get required approvals
+          4. Resolve any merge conflicts
+          5. Remove any blocking labels (\`do-not-merge\`, \`wip\`, etc.)"
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

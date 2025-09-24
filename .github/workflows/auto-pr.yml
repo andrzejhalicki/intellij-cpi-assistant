@@ -1,0 +1,92 @@
+name: Auto Create Pull Request
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'fix/**'
+
+jobs:
+  create_pull_request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract branch info
+        id: branch_info
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+          if [[ $BRANCH_NAME == feature/* ]]; then
+            BRANCH_TYPE="feat"
+            TITLE_PREFIX="✨ Feature"
+          elif [[ $BRANCH_NAME == fix/* ]]; then
+            BRANCH_TYPE="fix"
+            TITLE_PREFIX="🐛 Fix"
+          else
+            BRANCH_TYPE="chore"
+            TITLE_PREFIX="🔧 Update"
+          fi
+
+          echo "branch_type=$BRANCH_TYPE" >> $GITHUB_OUTPUT
+          echo "title_prefix=$TITLE_PREFIX" >> $GITHUB_OUTPUT
+
+          BRANCH_CLEAN=$(echo $BRANCH_NAME | sed 's|.*/||' | sed 's|-| |g' | sed 's|_| |g')
+          echo "branch_clean=$BRANCH_CLEAN" >> $GITHUB_OUTPUT
+
+      - name: Check if PR exists
+        id: check_pr
+        run: |
+          PR_EXISTS=$(gh pr list --head "${{ steps.branch_info.outputs.branch_name }}" --json number --jq length)
+          echo "pr_exists=$PR_EXISTS" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request
+        if: steps.check_pr.outputs.pr_exists == '0'
+        uses: repo-sync/pull-request@v2
+        with:
+          destination_branch: "main"
+          pr_title: "${{ steps.branch_info.outputs.title_prefix }}: ${{ steps.branch_info.outputs.branch_clean }}"
+          pr_body: |
+            ## 📋 Summary
+            Auto-generated PR for `${{ steps.branch_info.outputs.branch_name }}` branch.
+
+            ### Changes
+            - [ ] Please describe the changes made in this PR
+
+            ### Type of Change
+            - [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
+            - [ ] ✨ New feature (non-breaking change which adds functionality)
+            - [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
+            - [ ] 📚 Documentation update
+            - [ ] 🔧 Maintenance/refactoring
+
+            ### Testing
+            - [ ] Tests have been added/updated
+            - [ ] All tests pass locally
+            - [ ] Manual testing completed
+
+            ### Checklist
+            - [ ] Code follows project style guidelines
+            - [ ] Self-review of code completed
+            - [ ] Comments added for hard-to-understand areas
+            - [ ] Documentation updated if needed
+
+            ---
+            🤖 *This PR was auto-created from branch `${{ steps.branch_info.outputs.branch_name }}`*
+          pr_label: "${{ steps.branch_info.outputs.branch_type }},auto-created"
+          pr_draft: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add reviewers and assignees
+        if: steps.check_pr.outputs.pr_exists == '0'
+        run: |
+          PR_NUMBER=$(gh pr list --head "${{ steps.branch_info.outputs.branch_name }}" --json number --jq '.[0].number')
+          gh pr edit $PR_NUMBER --add-assignee "${{ github.actor }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
