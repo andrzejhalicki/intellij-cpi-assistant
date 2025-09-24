@@ -5,9 +5,9 @@ on:
     branches:
       - 'feature/**'
       - 'fix/**'
+      - dev
     branches-ignore:
       - main
-      - dev
 
 jobs:
   create_pull_request:
