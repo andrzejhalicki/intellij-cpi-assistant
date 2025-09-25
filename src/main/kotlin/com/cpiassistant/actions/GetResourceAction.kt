@@ -2,9 +2,6 @@ package com.cpiassistant.actions
 
 import com.cpiassistant.nodes.CpiArtifact
 import com.cpiassistant.nodes.CpiResource
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -15,8 +12,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.LocalFileSystem
 import org.jetbrains.annotations.NotNull
-import java.awt.event.InputEvent
-import java.util.*
 import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath

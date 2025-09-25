@@ -6,9 +6,7 @@ import FileNodeStateComponent
 import com.cpiassistant.nodes.BaseNode
 import com.cpiassistant.nodes.CpiArtifact
 import com.cpiassistant.nodes.CpiResource
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
+import com.cpiassistant.services.NotificationService
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -17,10 +15,9 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.annotations.NotNull
-import java.util.*
+import java.util.Base64
 import javax.swing.JTree
 import javax.swing.tree.*
 
@@ -37,13 +34,7 @@ class AddResourceAction : AnAction() {
         val selectedFiles = FileChooser.chooseFiles(descriptor, project, null)
 
         if (selectedFiles.isEmpty()) {
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "No file selected.",
-                    NotificationType.INFORMATION
-                )
-            )
+            NotificationService.getInstance().showInfo("No file selected.")
             return
         }
 
@@ -53,14 +44,7 @@ class AddResourceAction : AnAction() {
             val fileEncoded = Base64.getEncoder().encodeToString(selectedFile.contentsToByteArray())
             artifact.addResource(newResource.id, fileEncoded) { res ->
                 if (!res) {
-                    Notifications.Bus.notify(
-                        Notification(
-                            "Custom Notification Group",
-                            "Error",
-                            "Failed to add resource to the artifact. Check if artifact is not locked.",
-                            NotificationType.ERROR
-                        )
-                    )
+                    NotificationService.getInstance().showError("Error", "Failed to add resource to the artifact. Check if artifact is not locked.")
                     return@addResource
                 }
 
@@ -70,14 +54,7 @@ class AddResourceAction : AnAction() {
                 }
             }
         } catch (e: Exception) {
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "Error",
-                    "Error processing file: ${e.message}",
-                    NotificationType.ERROR
-                )
-            )
+            NotificationService.getInstance().showError("Error", "Error processing file: ${e.message}")
         }
     }
 

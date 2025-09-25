@@ -56,7 +56,7 @@ class ToolWindowFactory : ToolWindowFactory {
 
     override fun shouldBeAvailable(project: Project) = true
 
-    class MyToolWindow(toolWindow: ToolWindow) {
+    class MyToolWindow(@Suppress("UNUSED_PARAMETER") toolWindow: ToolWindow) {
 
         val actionGroup: DefaultActionGroup = DefaultActionGroup()
 

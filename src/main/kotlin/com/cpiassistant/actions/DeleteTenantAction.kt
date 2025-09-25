@@ -3,9 +3,7 @@ package com.cpiassistant.actions
 import TenantInfo
 import TenantStateComponent
 import com.cpiassistant.nodes.Tenant
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
+import com.cpiassistant.services.NotificationService
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -47,22 +45,9 @@ class DeleteTenantAction : AnAction() {
             treeModel.removeNodeFromParent(selectedNode)
             treeModel.reload()
 
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "Tenant '${tenant.name}' has been deleted successfully.",
-                    NotificationType.INFORMATION
-                )
-            )
+            NotificationService.getInstance().showInfo("Tenant '${tenant.name}' has been deleted successfully.")
         } catch (e: Exception) {
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "Error",
-                    "Error deleting tenant: ${e.message}",
-                    NotificationType.ERROR
-                )
-            )
+            NotificationService.getInstance().showError("Error", "Error deleting tenant: ${e.message}")
         }
 
     }

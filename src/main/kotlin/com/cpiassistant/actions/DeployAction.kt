@@ -5,9 +5,7 @@ import com.cpiassistant.deployment.DeploymentBackgroundTask
 import com.cpiassistant.nodes.CpiArtifact
 import com.cpiassistant.nodes.CpiScriptCollection
 import com.cpiassistant.nodes.Tenant
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
+import com.cpiassistant.services.NotificationService
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -66,24 +64,10 @@ class DeployAction : AnAction() {
                 ProgressManager.getInstance().run(backgroundTask)
 
             } catch (e: Exception) {
-                Notifications.Bus.notify(
-                    Notification(
-                        "Custom Notification Group",
-                        "Deployment Error",
-                        "Failed to start deployment: ${e.message}",
-                        NotificationType.ERROR
-                    )
-                )
+                NotificationService.getInstance().showError("Deployment Error", "Failed to start deployment: ${e.message}")
             }
         } else {
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "Deployment Error",
-                    "No artifact selected for deployment",
-                    NotificationType.ERROR
-                )
-            )
+            NotificationService.getInstance().showError("Deployment Error", "No artifact selected for deployment")
         }
     }
 

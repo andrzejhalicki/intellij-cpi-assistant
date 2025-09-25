@@ -101,7 +101,7 @@ class DeploymentBackgroundTask(
 
         // Update secondary text with more details
         val secondaryText = buildString {
-            append("$artifactName")
+            append(artifactName)
             if (tenantName != "Unknown Tenant") {
                 append(" → $tenantName")
             }
@@ -119,7 +119,7 @@ class DeploymentBackgroundTask(
         indicator.isIndeterminate = task.status == DeploymentStatus.QUEUED
     }
 
-    private fun handleCompletion(task: DeploymentTask) {
+    private fun handleCompletion(@Suppress("UNUSED_PARAMETER") task: DeploymentTask) {
         // Task has been completed, final status was displayed for a moment
         // The progress bar will now disappear as the background task ends
     }

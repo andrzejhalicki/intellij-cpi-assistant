@@ -23,7 +23,7 @@ class TreeCellRenderer() : DefaultTreeCellRenderer() {
     ): Component {
         val renderer = JPanel(FlowLayout(FlowLayout.LEFT))
         if ((value != null) && (value is DefaultMutableTreeNode)) {
-            val userObject = (value as DefaultMutableTreeNode).userObject;
+            val userObject = value.userObject
             if(userObject == "Root") {
                 buildRoot(renderer)
             } else if (userObject is Tenant) {
@@ -55,17 +55,17 @@ class TreeCellRenderer() : DefaultTreeCellRenderer() {
                 }
             }
         }
-        return renderer as Component
+        return renderer
     }
 
     private fun buildRoot(renderer: JPanel) {
-        renderer.add(JBLabel("Systems"));
+        renderer.add(JBLabel("Systems"))
     }
 
     private fun buildTenant(renderer: JPanel, tenant: Tenant) {
         renderer.add(JBLabel(MyIcons.Loading))
         renderer.add(JBLabel(MyIcons.Tenant))
-        renderer.add(JLabel(tenant.name));
+        renderer.add(JLabel(tenant.name))
     }
 
     private fun buildFavorites(renderer: JPanel, favorites: Favorites) {
@@ -91,14 +91,14 @@ class TreeCellRenderer() : DefaultTreeCellRenderer() {
         renderer.add(JBLabel(MyIcons.Loading))
         val icon = JBLabel(MyIcons.ScriptCollection)
         renderer.add(icon)
-        renderer.add(JBLabel(cpiScriptCollection.name));
+        renderer.add(JBLabel(cpiScriptCollection.name))
     }
 
     private fun buildResource(renderer: JPanel, resource: CpiResource) {
         renderer.add(JBLabel(MyIcons.Loading))
         val icon = JBLabel(MyIcons.Script)
         renderer.add(icon)
-        renderer.add(JLabel(resource.name));
+        renderer.add(JLabel(resource.name))
         val pathLabel = JBLabel(resource.path)
         pathLabel.foreground = SimpleTextAttributes.GRAYED_ATTRIBUTES.fgColor
         renderer.add(pathLabel)

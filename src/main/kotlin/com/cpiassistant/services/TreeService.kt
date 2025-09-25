@@ -34,7 +34,7 @@ class TreeService(private val project: Project) {
     }
     fun buildTree(): Tree {
 
-        val treeModel: MyTreeModel = MyTreeModel()
+        val treeModel = MyTreeModel()
 
         val models = treeModel.getModels()
         val dummyRoot = DefaultMutableTreeNode("Dummy Root")
@@ -162,7 +162,7 @@ class TreeService(private val project: Project) {
                 actionGroup
             )
             tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
-            popupMenu.component.show(e?.component, e!!.x, e.y)
+            popupMenu.component.show(e.component, e.x, e.y)
             return
         } else if (nodeHoveredOver.userObject is CpiPackage) {
             val parent = nodeHoveredOver.parent as DefaultMutableTreeNode
@@ -174,7 +174,7 @@ class TreeService(private val project: Project) {
                     actionGroup
                 )
                 tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
-                popupMenu.component.show(e?.component, e!!.x, e.y)
+                popupMenu.component.show(e.component, e.x, e.y)
                 return
             }
             val actionGroup =
@@ -184,7 +184,7 @@ class TreeService(private val project: Project) {
                 actionGroup
             )
             tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
-            popupMenu.component.show(e?.component, e!!.x, e.y)
+            popupMenu.component.show(e.component, e.x, e.y)
             return
         } else if (nodeHoveredOver.userObject is Tenant) {
             val actionGroup =
@@ -194,7 +194,7 @@ class TreeService(private val project: Project) {
                 actionGroup
             )
             tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
-            popupMenu.component.show(e?.component, e!!.x, e.y)
+            popupMenu.component.show(e.component, e.x, e.y)
             return
         } else if (nodeHoveredOver.userObject is CpiResource) {
             val actionGroup =
@@ -204,13 +204,14 @@ class TreeService(private val project: Project) {
                 actionGroup
             )
             tree.putClientProperty("CustomDataProvider", CustomDataProvider(nodeHoveredOver.userObject))
-            popupMenu.component.show(e?.component, e!!.x, e.y)
+            popupMenu.component.show(e.component, e.x, e.y)
             return
         }
     }
 
     private fun handleDoubleClick(e: MouseEvent?, tree: Tree) {
-        val path = tree.getPathForLocation(e!!.x, e!!.y)
+        if (e == null) return
+        val path = tree.getPathForLocation(e.x, e.y)
         if (path?.getLastPathComponent() == null) {
             return
         }

@@ -6,9 +6,7 @@ import TenantStateComponent
 import com.cpiassistant.nodes.Tenant
 import com.cpiassistant.services.CpiService
 import com.cpiassistant.services.TreeService
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
+import com.cpiassistant.services.NotificationService
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
@@ -38,28 +36,21 @@ class AddTenant : AnAction() {
                     dialog.getClientId(),
                     dialog.getClientSecret()
                 )
-                val tenantStateComponent = project?.service<TenantStateComponent>()
-                tenantStateComponent?.addTenant(tenantInfo)
+                val tenantStateComponent = project.service<TenantStateComponent>()
+                tenantStateComponent.addTenant(tenantInfo)
 
                 val newTenant = Tenant(
                     dialog.getName(), dialog.getName(),
                     CpiService(dialog.getClientId(), dialog.getClientSecret(), dialog.getURL(), dialog.getTokenUrl()),
                     mutableListOf<String>(),
-                    tenantStateComponent!!
+                    tenantStateComponent
                 )
 
                 val isAuthenticated = newTenant.service.authenticate()
                 newTenant.isConnected = isAuthenticated
 
                 if (!isAuthenticated) {
-                    Notifications.Bus.notify(
-                        Notification(
-                            "Custom Notification Group",
-                            "Warning",
-                            "Tenant added but authentication failed. Please check your credentials.",
-                            NotificationType.WARNING
-                        )
-                    )
+                    NotificationService.getInstance().showWarning("Warning", "Tenant added but authentication failed. Please check your credentials.")
                 }
 
                 val newTenantNode = DefaultMutableTreeNode(newTenant)
@@ -71,26 +62,12 @@ class AddTenant : AnAction() {
                         treeService.updateTree(newTenantNode)
                     } catch (e: Exception) {
                         ApplicationManager.getApplication().invokeLater {
-                            Notifications.Bus.notify(
-                                Notification(
-                                    "Custom Notification Group",
-                                    "Error",
-                                    "Error updating tree: ${e.message}",
-                                    NotificationType.ERROR
-                                )
-                            )
+                            NotificationService.getInstance().showError("Error", "Error updating tree: ${e.message}")
                         }
                     }
                 }
             } catch (e: Exception) {
-                Notifications.Bus.notify(
-                    Notification(
-                        "Custom Notification Group",
-                        "Error",
-                        "Error updating tenant",
-                        NotificationType.ERROR
-                    )
-                )
+                NotificationService.getInstance().showError("Error", "Error updating tenant")
             }
         }
     }
