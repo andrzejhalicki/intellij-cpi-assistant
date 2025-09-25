@@ -57,7 +57,7 @@ class AddResourceAction : AnAction() {
                         Notification(
                             "Custom Notification Group",
                             "Error",
-                            "Failed to add resource to the artifact.",
+                            "Failed to add resource to the artifact. Check if artifact is not locked.",
                             NotificationType.ERROR
                         )
                     )
