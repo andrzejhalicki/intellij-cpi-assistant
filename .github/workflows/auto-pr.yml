@@ -32,7 +32,8 @@ permissions:
 
 jobs:
   create_pull_request:
-    if: github.event_name == 'push'
+    needs: quality-gate
+    if: github.event_name == 'push' && needs.quality-gate.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -274,7 +275,7 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout code
@@ -381,7 +382,7 @@ jobs:
           retention-days: 3
 
       - name: Comment PR with test results
-        if: github.event_name == 'pull_request' && always() && inputs.skip_tests != 'true'
+        if: false  # Disabled - PR commenting will be handled after PR creation
         uses: actions/github-script@v7
         with:
           script: |
@@ -459,7 +460,7 @@ jobs:
     name: Quality Gate
     needs: test
     runs-on: ubuntu-latest
-    if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
+    if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     steps:
       - name: Check test results
         run: |
