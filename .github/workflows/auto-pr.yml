@@ -1,4 +1,4 @@
-name: Auto Create Pull Request
+name: Auto Create Pull Request & CI
 
 on:
   push:
@@ -6,14 +6,33 @@ on:
       - 'feature/**'
       - 'fix/**'
       - dev
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'src/**'
+      - 'build.gradle.kts'
+      - 'gradle/**'
+      - '.github/workflows/auto-pr.yml'
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests (for debugging build issues)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 permissions:
   contents: read
   pull-requests: write
   issues: write
+  checks: write
 
 jobs:
   create_pull_request:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -44,6 +63,110 @@ jobs:
           BRANCH_CLEAN=$(echo $BRANCH_NAME | sed 's|.*/||' | sed 's|-| |g' | sed 's|_| |g')
           echo "branch_clean=$BRANCH_CLEAN" >> $GITHUB_OUTPUT
 
+      - name: Analyze git changes
+        id: analyze_changes
+        run: |
+          # Get diff against main branch
+          git fetch origin main:main 2>/dev/null || echo "Main branch already available"
+
+          # Generate diff summary
+          DIFF_SUMMARY=$(git diff --stat main...HEAD 2>/dev/null || git diff --stat HEAD~1...HEAD)
+          DIFF_CONTENT=$(git diff main...HEAD 2>/dev/null || git diff HEAD~1...HEAD)
+
+          # Get recent commit messages
+          COMMIT_MESSAGES=$(git log --oneline main...HEAD 2>/dev/null || git log --oneline -n 5)
+
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only main...HEAD 2>/dev/null || git diff --name-only HEAD~1...HEAD)
+
+          # Prepare data for AI analysis (truncate if too long)
+          echo "diff_summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$DIFF_SUMMARY" | head -20 >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "commit_messages<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_MESSAGES" | head -10 >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" | head -20 >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # Store truncated diff content (first 2000 chars to avoid API limits)
+          echo "diff_content<<EOF" >> $GITHUB_OUTPUT
+          echo "$DIFF_CONTENT" | head -c 2000 >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate AI PR content
+        id: ai_content
+        run: |
+          # Extract variables to avoid GitHub Actions expression issues in JSON
+          BRANCH_NAME="${{ steps.branch_info.outputs.branch_name }}"
+          BRANCH_TYPE="${{ steps.branch_info.outputs.branch_type }}"
+          CHANGED_FILES="${{ steps.analyze_changes.outputs.changed_files }}"
+          COMMIT_MESSAGES="${{ steps.analyze_changes.outputs.commit_messages }}"
+          DIFF_SUMMARY="${{ steps.analyze_changes.outputs.diff_summary }}"
+          DIFF_CONTENT="${{ steps.analyze_changes.outputs.diff_content }}"
+
+          # Build the prompt content safely
+          PROMPT_CONTENT="Analyze these code changes for an IntelliJ IDEA plugin called 'CPI Assistant' for SAP Cloud Platform Integration. Branch: ${BRANCH_NAME}. Branch type: ${BRANCH_TYPE}. Changed files: ${CHANGED_FILES}. Commit messages: ${COMMIT_MESSAGES}. Diff summary: ${DIFF_SUMMARY}. Code changes: ${DIFF_CONTENT}. Generate a complete PR with: 1. Concise title (without emoji prefix, max 60 chars) 2. Complete description with ALL sections including: ## Summary [Brief description of what this PR does] ## Changes [Bullet points of key changes] ## Impact [What areas of the codebase are affected] ## Type of Change [Select appropriate checkboxes based on analysis] - [ ] 🐛 Bug fix (non-breaking change which fixes an issue) - [ ] ✨ New feature (non-breaking change which adds functionality) - [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected) - [ ] 📚 Documentation update - [ ] 🔧 Maintenance/refactoring ## Testing [Context-aware testing checklist based on changes] - [ ] Tests have been added/updated for new functionality - [ ] All existing tests pass - [ ] Manual testing completed for [specific areas] - [ ] CI checks are passing ✅ ## Checklist [Code review checklist with specific focus areas] - [ ] Code follows project style guidelines - [ ] Self-review of code completed - [ ] Comments added for complex logic - [ ] Documentation updated if needed - [ ] [Add specific items based on changes] --- 🤖 *This PR was auto-created from branch \`${BRANCH_NAME}\` with AI-generated content* Respond in this exact JSON format: { \"title\": \"your title here\", \"description\": \"your complete multi-line description here\" }"
+
+          # Create JSON payload using jq to ensure proper escaping
+          jq -n \
+            --arg model "claude-3-haiku-20240307" \
+            --arg content "$PROMPT_CONTENT" \
+            '{
+              "model": $model,
+              "max_tokens": 1500,
+              "messages": [
+                {
+                  "role": "user",
+                  "content": $content
+                }
+              ]
+            }' > prompt.json
+
+          # Call Claude API with error handling
+          if [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "🤖 Generating AI-powered PR content..."
+
+            RESPONSE=$(curl -s -X POST "https://api.anthropic.com/v1/messages" \
+              -H "Content-Type: application/json" \
+              -H "x-api-key: ${{ secrets.ANTHROPIC_API_KEY }}" \
+              -H "anthropic-version: 2023-06-01" \
+              -d @prompt.json \
+              --max-time 30 \
+              --retry 2)
+
+            # Extract content from Claude response
+            if echo "$RESPONSE" | jq -e '.content[0].text' > /dev/null 2>&1; then
+              AI_JSON=$(echo "$RESPONSE" | jq -r '.content[0].text')
+
+              # Parse AI response
+              if echo "$AI_JSON" | jq -e '.title' > /dev/null 2>&1; then
+                AI_TITLE=$(echo "$AI_JSON" | jq -r '.title')
+                AI_DESCRIPTION=$(echo "$AI_JSON" | jq -r '.description')
+
+                echo "ai_title=$AI_TITLE" >> $GITHUB_OUTPUT
+                echo "ai_description<<EOF" >> $GITHUB_OUTPUT
+                echo "$AI_DESCRIPTION" >> $GITHUB_OUTPUT
+                echo "EOF" >> $GITHUB_OUTPUT
+                echo "ai_success=true" >> $GITHUB_OUTPUT
+
+                echo "✅ AI content generated successfully"
+              else
+                echo "⚠️ AI response parsing failed, using fallback"
+                echo "ai_success=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "⚠️ AI API call failed, using fallback"
+              echo "ai_success=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "⚠️ ANTHROPIC_API_KEY not set, using fallback"
+            echo "ai_success=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Check if PR exists
         id: check_pr
         run: |
@@ -52,40 +175,51 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare PR content
+        id: pr_content
+        run: |
+          # Use AI-generated content if available, otherwise minimal fallback
+          if [ "${{ steps.ai_content.outputs.ai_success }}" = "true" ]; then
+            echo "✅ Using AI-generated PR content"
+
+            FINAL_TITLE="${{ steps.branch_info.outputs.title_prefix }}: ${{ steps.ai_content.outputs.ai_title }}"
+            FINAL_DESCRIPTION="${{ steps.ai_content.outputs.ai_description }}"
+
+          else
+            echo "⚠️  AI generation failed, using minimal fallback"
+
+            FINAL_TITLE="${{ steps.branch_info.outputs.title_prefix }}: ${{ steps.branch_info.outputs.branch_clean }}"
+            FINAL_DESCRIPTION="## Summary\nAuto-generated PR for \`${{ steps.branch_info.outputs.branch_name }}\` branch.\n\n**Note:** AI-powered description generation failed. Please manually add:\n- Description of changes\n- Testing notes\n- Review checklist\n\n---\n🤖 *Auto-created from branch \`${{ steps.branch_info.outputs.branch_name }}\`*"
+          fi
+
+          echo "final_title<<EOF" >> $GITHUB_OUTPUT
+          echo "$FINAL_TITLE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "final_description<<EOF" >> $GITHUB_OUTPUT
+          echo "$FINAL_DESCRIPTION" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Prepare PR labels
+        if: steps.check_pr.outputs.pr_exists == '0'
+        id: pr_labels
+        run: |
+          BASE_LABELS="${{ steps.branch_info.outputs.branch_type }},auto-created"
+          if [ "${{ steps.ai_content.outputs.ai_success }}" = "true" ]; then
+            FULL_LABELS="${BASE_LABELS},ai-powered"
+          else
+            FULL_LABELS="${BASE_LABELS}"
+          fi
+          echo "labels=$FULL_LABELS" >> $GITHUB_OUTPUT
+
       - name: Create Pull Request
         if: steps.check_pr.outputs.pr_exists == '0'
         uses: repo-sync/pull-request@v2
         with:
           destination_branch: "main"
-          pr_title: "${{ steps.branch_info.outputs.title_prefix }}: ${{ steps.branch_info.outputs.branch_clean }}"
-          pr_body: |
-            ## 📋 Summary
-            Auto-generated PR for `${{ steps.branch_info.outputs.branch_name }}` branch.
-
-            ### Changes
-            - [ ] Please describe the changes made in this PR
-
-            ### Type of Change
-            - [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
-            - [ ] ✨ New feature (non-breaking change which adds functionality)
-            - [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-            - [ ] 📚 Documentation update
-            - [ ] 🔧 Maintenance/refactoring
-
-            ### Testing
-            - [ ] Tests have been added/updated
-            - [ ] All tests pass locally
-            - [ ] Manual testing completed
-
-            ### Checklist
-            - [ ] Code follows project style guidelines
-            - [ ] Self-review of code completed
-            - [ ] Comments added for hard-to-understand areas
-            - [ ] Documentation updated if needed
-
-            ---
-            🤖 *This PR was auto-created from branch `${{ steps.branch_info.outputs.branch_name }}`*
-          pr_label: "${{ steps.branch_info.outputs.branch_type }},auto-created"
+          pr_title: "${{ steps.pr_content.outputs.final_title }}"
+          pr_body: "${{ steps.pr_content.outputs.final_description }}"
+          pr_label: "${{ steps.pr_labels.outputs.labels }}"
           pr_draft: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -96,3 +230,211 @@ jobs:
           gh pr edit $PR_NUMBER --add-assignee "${{ github.actor }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Build project
+        id: build
+        run: |
+          echo "🔨 Building project..."
+          ./gradlew compileKotlin compileTestKotlin --no-daemon --stacktrace
+          echo "build_status=success" >> $GITHUB_OUTPUT
+
+      - name: Run unit tests
+        if: inputs.skip_tests != 'true'
+        id: test
+        run: |
+          echo "🧪 Running unit tests..."
+          ./gradlew test --no-daemon --continue --stacktrace
+          echo "test_status=success" >> $GITHUB_OUTPUT
+
+      - name: Generate test report
+        if: always() && inputs.skip_tests != 'true'
+        run: |
+          echo "📊 Generating test reports..."
+          ./gradlew testReport --no-daemon || true
+
+      - name: Parse test results
+        if: always() && inputs.skip_tests != 'true'
+        id: test_results
+        run: |
+          if [ -f build/test-results/test/TEST-*.xml ]; then
+            # Count test results from XML files
+            TOTAL_TESTS=$(grep -h 'testsuite' build/test-results/test/TEST-*.xml | sed 's/.*tests="\([0-9]*\)".*/\1/' | awk '{sum += $1} END {print sum}' || echo "0")
+            FAILED_TESTS=$(grep -h 'testsuite' build/test-results/test/TEST-*.xml | sed 's/.*failures="\([0-9]*\)".*/\1/' | awk '{sum += $1} END {print sum}' || echo "0")
+            SKIPPED_TESTS=$(grep -h 'testsuite' build/test-results/test/TEST-*.xml | sed 's/.*skipped="\([0-9]*\)".*/\1/' | awk '{sum += $1} END {print sum}' || echo "0")
+            PASSED_TESTS=$((TOTAL_TESTS - FAILED_TESTS - SKIPPED_TESTS))
+
+            echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+            echo "passed_tests=$PASSED_TESTS" >> $GITHUB_OUTPUT
+            echo "failed_tests=$FAILED_TESTS" >> $GITHUB_OUTPUT
+            echo "skipped_tests=$SKIPPED_TESTS" >> $GITHUB_OUTPUT
+
+            if [ "$FAILED_TESTS" -gt 0 ]; then
+              echo "has_failures=true" >> $GITHUB_OUTPUT
+            else
+              echo "has_failures=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No test results found"
+            echo "total_tests=0" >> $GITHUB_OUTPUT
+            echo "passed_tests=0" >> $GITHUB_OUTPUT
+            echo "failed_tests=0" >> $GITHUB_OUTPUT
+            echo "skipped_tests=0" >> $GITHUB_OUTPUT
+            echo "has_failures=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ github.run_number }}
+          path: |
+            build/reports/tests/test/
+            build/test-results/test/
+          retention-days: 7
+
+      - name: Upload build reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports-${{ github.run_number }}
+          path: |
+            build/reports/
+            build/kotlin/
+          retention-days: 3
+
+      - name: Comment PR with test results
+        if: github.event_name == 'pull_request' && always() && inputs.skip_tests != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const testResults = {
+              total: '${{ steps.test_results.outputs.total_tests }}',
+              passed: '${{ steps.test_results.outputs.passed_tests }}',
+              failed: '${{ steps.test_results.outputs.failed_tests }}',
+              skipped: '${{ steps.test_results.outputs.skipped_tests }}',
+              hasFailures: '${{ steps.test_results.outputs.has_failures }}' === 'true'
+            };
+
+            const buildStatus = '${{ steps.build.outcome }}';
+            const testStatus = '${{ steps.test.outcome }}';
+
+            let emoji = testResults.hasFailures || testStatus === 'failure' ? '❌' : '✅';
+            let status = testResults.hasFailures || testStatus === 'failure' ? 'FAILED' : 'PASSED';
+
+            const comment = `## ${emoji} CI Results ${status}
+
+            ### 🔨 Build Status
+            ${buildStatus === 'success' ? '✅ Build successful' : '❌ Build failed'}
+
+            ### 🧪 Test Results
+            ${testStatus === 'skipped' ? '⏭️ Tests skipped' : ''}
+            ${testStatus === 'success' && !testResults.hasFailures ? `✅ All tests passed!
+            - **Total Tests:** ${testResults.total}
+            - **Passed:** ${testResults.passed}
+            - **Failed:** ${testResults.failed}
+            - **Skipped:** ${testResults.skipped}` : ''}
+            ${testResults.hasFailures ? `❌ Some tests failed
+            - **Total Tests:** ${testResults.total}
+            - **Passed:** ${testResults.passed}
+            - **Failed:** ${testResults.failed}
+            - **Skipped:** ${testResults.skipped}
+
+            📋 [View detailed test report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})` : ''}
+
+            ### 📊 Artifacts
+            - 📁 [Test Reports](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - 🔧 [Build Reports](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            ---
+            🤖 *Automated CI check - Run #${{ github.run_number }}*`;
+
+            // Find existing comment to update
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existingComment = comments.find(comment =>
+              comment.user.login === 'github-actions[bot]' &&
+              comment.body.includes('CI Results')
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+  # Quality gate job - fails the workflow if tests fail
+  quality-gate:
+    name: Quality Gate
+    needs: test
+    runs-on: ubuntu-latest
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "❌ Tests failed or were cancelled"
+            echo "Build status: ${{ needs.test.result }}"
+            exit 1
+          else
+            echo "✅ All tests passed successfully"
+          fi
+
+      - name: Quality gate passed
+        run: |
+          echo "🎉 Quality gate passed! Ready for code review."
+          echo "- Build: ✅ Success"
+          echo "- Tests: ✅ All passed"
+          echo "- Ready for merge: ✅ Yes"
