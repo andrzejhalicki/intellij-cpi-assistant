@@ -94,16 +94,17 @@ jobs:
       - name: Generate AI PR content
         id: ai_content
         run: |
-          # Extract variables to avoid GitHub Actions expression issues in JSON
-          BRANCH_NAME="${{ steps.branch_info.outputs.branch_name }}"
-          BRANCH_TYPE="${{ steps.branch_info.outputs.branch_type }}"
-          CHANGED_FILES="${{ steps.analyze_changes.outputs.changed_files }}"
-          COMMIT_MESSAGES="${{ steps.analyze_changes.outputs.commit_messages }}"
-          DIFF_SUMMARY="${{ steps.analyze_changes.outputs.diff_summary }}"
-          DIFF_CONTENT="${{ steps.analyze_changes.outputs.diff_content }}"
+          # Extract and sanitize variables to avoid shell metacharacter issues
+          BRANCH_NAME=$(echo '${{ steps.branch_info.outputs.branch_name }}' | sed 's/[`$"\\]/\\&/g')
+          BRANCH_TYPE=$(echo '${{ steps.branch_info.outputs.branch_type }}' | sed 's/[`$"\\]/\\&/g')
+          CHANGED_FILES=$(echo '${{ steps.analyze_changes.outputs.changed_files }}' | sed 's/[`$"\\]/\\&/g')
+          COMMIT_MESSAGES=$(echo '${{ steps.analyze_changes.outputs.commit_messages }}' | sed 's/[`$"\\]/\\&/g')
+          DIFF_SUMMARY=$(echo '${{ steps.analyze_changes.outputs.diff_summary }}' | sed 's/[`$"\\]/\\&/g')
+          DIFF_CONTENT=$(echo '${{ steps.analyze_changes.outputs.diff_content }}' | sed 's/[`$"\\]/\\&/g')
 
-          # Build the prompt content safely
-          PROMPT_CONTENT="Analyze these code changes for an IntelliJ IDEA plugin called 'CPI Assistant' for SAP Cloud Platform Integration. Branch: ${BRANCH_NAME}. Branch type: ${BRANCH_TYPE}. Changed files: ${CHANGED_FILES}. Commit messages: ${COMMIT_MESSAGES}. Diff summary: ${DIFF_SUMMARY}. Code changes: ${DIFF_CONTENT}. Generate a complete PR with: 1. Concise title (without emoji prefix, max 60 chars) 2. Complete description with ALL sections including: ## Summary [Brief description of what this PR does] ## Changes [Bullet points of key changes] ## Impact [What areas of the codebase are affected] ## Type of Change [Select appropriate checkboxes based on analysis] - [ ] 🐛 Bug fix (non-breaking change which fixes an issue) - [ ] ✨ New feature (non-breaking change which adds functionality) - [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected) - [ ] 📚 Documentation update - [ ] 🔧 Maintenance/refactoring ## Testing [Context-aware testing checklist based on changes] - [ ] Tests have been added/updated for new functionality - [ ] All existing tests pass - [ ] Manual testing completed for [specific areas] - [ ] CI checks are passing ✅ ## Checklist [Code review checklist with specific focus areas] - [ ] Code follows project style guidelines - [ ] Self-review of code completed - [ ] Comments added for complex logic - [ ] Documentation updated if needed - [ ] [Add specific items based on changes] --- 🤖 *This PR was auto-created from branch \`${BRANCH_NAME}\` with AI-generated content* Respond in this exact JSON format: { \"title\": \"your title here\", \"description\": \"your complete multi-line description here\" }"
+          # Build prompt content as a single line to avoid YAML parsing issues
+          PROMPT_CONTENT="Analyze these code changes for an IntelliJ IDEA plugin called 'CPI Assistant' for SAP Cloud Platform Integration. Branch: $BRANCH_NAME. Branch type: $BRANCH_TYPE. Changed files: $CHANGED_FILES. Commit messages: $COMMIT_MESSAGES. Diff summary: $DIFF_SUMMARY. Code changes: $DIFF_CONTENT. Generate a complete PR with: 1. Concise title (without emoji prefix, max 60 chars) 2. Complete description with ALL sections including: ## Summary [Brief description of what this PR does] ## Changes [Bullet points of key changes] ## Impact [What areas of the codebase are affected] ## Type of Change [Select appropriate checkboxes based on analysis] - [ ] 🐛 Bug fix (non-breaking change which fixes an issue) - [ ] ✨ New feature (non-breaking change which adds functionality) - [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected) - [ ] 📚 Documentation update - [ ] 🔧 Maintenance/refactoring ## Testing [Context-aware testing checklist based on changes] - [ ] Tests have been added/updated for new functionality - [ ] All existing tests pass - [ ] Manual testing completed for [specific areas] - [ ] CI checks are passing ✅ ## Checklist [Code review checklist with specific focus areas] - [ ] Code follows project style guidelines - [ ] Self-review of code completed - [ ] Comments added for complex logic - [ ] Documentation updated if needed - [ ] [Add specific items based on changes] --- 🤖 *This PR was auto-created with AI-generated content* Respond in this exact JSON format: { \"title\": \"your title here\", \"description\": \"your complete multi-line description here\" }"
+
 
           # Create JSON payload using jq to ensure proper escaping
           jq -n \
