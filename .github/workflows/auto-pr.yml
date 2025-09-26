@@ -79,23 +79,17 @@ jobs:
           # Get changed files
           CHANGED_FILES=$(git diff --name-only main...HEAD 2>/dev/null || git diff --name-only HEAD~1...HEAD)
 
-          # Prepare data for AI analysis (truncate if too long)
-          echo "diff_summary<<EOF" >> $GITHUB_OUTPUT
-          echo "$DIFF_SUMMARY" | head -20 >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Prepare data for AI analysis (truncate if too long and use safer output format)
+          DIFF_SUMMARY_SAFE=$(echo "$DIFF_SUMMARY" | head -20 | tr '\n' ' ' | tr -d '"' | cut -c1-500)
+          COMMIT_MESSAGES_SAFE=$(echo "$COMMIT_MESSAGES" | head -10 | tr '\n' ' ' | tr -d '"' | cut -c1-500)
+          CHANGED_FILES_SAFE=$(echo "$CHANGED_FILES" | head -20 | tr '\n' ' ' | tr -d '"' | cut -c1-500)
+          DIFF_CONTENT_SAFE=$(echo "$DIFF_CONTENT" | head -c 1000 | tr '\n' ' ' | tr -d '"' | cut -c1-1000)
 
-          echo "commit_messages<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMIT_MESSAGES" | head -10 >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGED_FILES" | head -20 >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-          # Store truncated diff content (first 2000 chars to avoid API limits)
-          echo "diff_content<<EOF" >> $GITHUB_OUTPUT
-          echo "$DIFF_CONTENT" | head -c 2000 >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Output as single line values to avoid EOF delimiter issues
+          echo "diff_summary=$DIFF_SUMMARY_SAFE" >> $GITHUB_OUTPUT
+          echo "commit_messages=$COMMIT_MESSAGES_SAFE" >> $GITHUB_OUTPUT
+          echo "changed_files=$CHANGED_FILES_SAFE" >> $GITHUB_OUTPUT
+          echo "diff_content=$DIFF_CONTENT_SAFE" >> $GITHUB_OUTPUT
 
       - name: Generate AI PR content
         id: ai_content
@@ -147,10 +141,10 @@ jobs:
                 AI_TITLE=$(echo "$AI_JSON" | jq -r '.title')
                 AI_DESCRIPTION=$(echo "$AI_JSON" | jq -r '.description')
 
-                echo "ai_title=$AI_TITLE" >> $GITHUB_OUTPUT
-                echo "ai_description<<EOF" >> $GITHUB_OUTPUT
-                echo "$AI_DESCRIPTION" >> $GITHUB_OUTPUT
-                echo "EOF" >> $GITHUB_OUTPUT
+                echo "ai_title=${AI_TITLE}" >> $GITHUB_OUTPUT
+                # Encode AI description to avoid multiline issues
+                AI_DESCRIPTION_ENCODED=$(echo "$AI_DESCRIPTION" | base64 -w 0)
+                echo "ai_description_encoded=${AI_DESCRIPTION_ENCODED}" >> $GITHUB_OUTPUT
                 echo "ai_success=true" >> $GITHUB_OUTPUT
 
                 echo "✅ AI content generated successfully"
@@ -183,7 +177,8 @@ jobs:
             echo "✅ Using AI-generated PR content"
 
             FINAL_TITLE="${{ steps.branch_info.outputs.title_prefix }}: ${{ steps.ai_content.outputs.ai_title }}"
-            FINAL_DESCRIPTION="${{ steps.ai_content.outputs.ai_description }}"
+            # Decode the AI-generated description
+            FINAL_DESCRIPTION=$(echo "${{ steps.ai_content.outputs.ai_description_encoded }}" | base64 -d)
 
           else
             echo "⚠️  AI generation failed, using minimal fallback"
@@ -192,13 +187,12 @@ jobs:
             FINAL_DESCRIPTION="## Summary\nAuto-generated PR for \`${{ steps.branch_info.outputs.branch_name }}\` branch.\n\n**Note:** AI-powered description generation failed. Please manually add:\n- Description of changes\n- Testing notes\n- Review checklist\n\n---\n🤖 *Auto-created from branch \`${{ steps.branch_info.outputs.branch_name }}\`*"
           fi
 
-          echo "final_title<<EOF" >> $GITHUB_OUTPUT
-          echo "$FINAL_TITLE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Use safer output format to avoid EOF delimiter issues
+          echo "final_title=${FINAL_TITLE}" >> $GITHUB_OUTPUT
 
-          echo "final_description<<EOF" >> $GITHUB_OUTPUT
-          echo "$FINAL_DESCRIPTION" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # For description, encode newlines to avoid multiline issues
+          FINAL_DESCRIPTION_ENCODED=$(echo "$FINAL_DESCRIPTION" | base64 -w 0)
+          echo "final_description_encoded=${FINAL_DESCRIPTION_ENCODED}" >> $GITHUB_OUTPUT
 
       - name: Prepare PR labels
         if: steps.check_pr.outputs.pr_exists == '0'
@@ -212,13 +206,20 @@ jobs:
           fi
           echo "labels=$FULL_LABELS" >> $GITHUB_OUTPUT
 
+      - name: Decode PR description
+        if: steps.check_pr.outputs.pr_exists == '0'
+        id: decode_description
+        run: |
+          DECODED_DESCRIPTION=$(echo "${{ steps.pr_content.outputs.final_description_encoded }}" | base64 -d)
+          echo "decoded_description=${DECODED_DESCRIPTION}" >> $GITHUB_OUTPUT
+
       - name: Create Pull Request
         if: steps.check_pr.outputs.pr_exists == '0'
         uses: repo-sync/pull-request@v2
         with:
           destination_branch: "main"
           pr_title: "${{ steps.pr_content.outputs.final_title }}"
-          pr_body: "${{ steps.pr_content.outputs.final_description }}"
+          pr_body: "${{ steps.decode_description.outputs.decoded_description }}"
           pr_label: "${{ steps.pr_labels.outputs.labels }}"
           pr_draft: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
