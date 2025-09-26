@@ -196,7 +196,6 @@ jobs:
           echo "final_description_encoded=${FINAL_DESCRIPTION_ENCODED}" >> $GITHUB_OUTPUT
 
       - name: Prepare PR labels
-        if: steps.check_pr.outputs.pr_exists == '0'
         id: pr_labels
         run: |
           BASE_LABELS="${{ steps.branch_info.outputs.branch_type }},auto-created"
@@ -208,28 +207,66 @@ jobs:
           echo "labels=$FULL_LABELS" >> $GITHUB_OUTPUT
 
       - name: Decode PR description
-        if: steps.check_pr.outputs.pr_exists == '0'
         id: decode_description
         run: |
           DECODED_DESCRIPTION=$(echo "${{ steps.pr_content.outputs.final_description_encoded }}" | base64 -d)
           echo "decoded_description=${DECODED_DESCRIPTION}" >> $GITHUB_OUTPUT
 
-      - name: Create Pull Request
-        if: steps.check_pr.outputs.pr_exists == '0'
-        uses: repo-sync/pull-request@v2
-        with:
-          destination_branch: "main"
-          pr_title: "${{ steps.pr_content.outputs.final_title }}"
-          pr_body: "${{ steps.decode_description.outputs.decoded_description }}"
-          pr_label: "${{ steps.pr_labels.outputs.labels }}"
-          pr_draft: true
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create or Update Pull Request
+        id: create_or_update_pr
+        run: |
+          if [ "${{ steps.check_pr.outputs.pr_exists }}" = "0" ]; then
+            echo "🆕 Creating new pull request..."
+
+            # Create new PR
+            gh pr create \
+              --title "${{ steps.pr_content.outputs.final_title }}" \
+              --body "${{ steps.decode_description.outputs.decoded_description }}" \
+              --base main \
+              --head "${{ steps.branch_info.outputs.branch_name }}" \
+              --label "${{ steps.pr_labels.outputs.labels }}" \
+              --draft
+
+            # Get the newly created PR number
+            PR_NUMBER=$(gh pr list --head "${{ steps.branch_info.outputs.branch_name }}" --json number --jq '.[0].number')
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "pr_action=created" >> $GITHUB_OUTPUT
+
+            echo "✅ Created PR #$PR_NUMBER"
+
+          else
+            echo "🔄 Updating existing pull request..."
+
+            # Get existing PR number
+            PR_NUMBER=$(gh pr list --head "${{ steps.branch_info.outputs.branch_name }}" --json number --jq '.[0].number')
+
+            # Update existing PR
+            gh pr edit $PR_NUMBER \
+              --title "${{ steps.pr_content.outputs.final_title }}" \
+              --body "${{ steps.decode_description.outputs.decoded_description }}"
+
+            # Update labels (add new ones, keep existing)
+            gh pr edit $PR_NUMBER --add-label "${{ steps.pr_labels.outputs.labels }}"
+
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "pr_action=updated" >> $GITHUB_OUTPUT
+
+            echo "✅ Updated PR #$PR_NUMBER with new content"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Add reviewers and assignees
-        if: steps.check_pr.outputs.pr_exists == '0'
         run: |
-          PR_NUMBER=$(gh pr list --head "${{ steps.branch_info.outputs.branch_name }}" --json number --jq '.[0].number')
-          gh pr edit $PR_NUMBER --add-assignee "${{ github.actor }}"
+          PR_NUMBER="${{ steps.create_or_update_pr.outputs.pr_number }}"
+
+          # Only add assignee if this is a new PR
+          if [ "${{ steps.create_or_update_pr.outputs.pr_action }}" = "created" ]; then
+            echo "👤 Adding assignee to new PR..."
+            gh pr edit $PR_NUMBER --add-assignee "${{ github.actor }}"
+          else
+            echo "ℹ️ Skipping assignee update for existing PR"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
