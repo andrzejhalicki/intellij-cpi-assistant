@@ -1,0 +1,32 @@
+name: AI PR Description
+
+on:
+  workflow_run:
+    workflows: ["Test and Create PR"]
+    types: [completed]
+    branches: [feature/**, fix/**, dev]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+jobs:
+  ai-description:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Generate PR Description with Claude Haiku
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            Analyze the code changes in this PR and generate a concise, professional description.
+            Include:
+            - Brief summary of what this PR does
+            - Key changes made
+            - Any important notes for reviewers
+
+            Keep it concise and focus on the purpose and impact of the changes.
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: |
+            --model claude-3-5-haiku-20241022
