@@ -29,4 +29,4 @@ jobs:
             Keep it concise and focus on the purpose and impact of the changes.
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: |
-            --model claude-3-5-haiku-20241022
+            --model claude-sonnet-4-5-20250929
