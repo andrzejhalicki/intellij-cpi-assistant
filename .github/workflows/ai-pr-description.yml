@@ -17,7 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Generate PR Description with Claude Haiku
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate PR Description with Claude
         uses: anthropics/claude-code-action@v1
         with:
           prompt: |
