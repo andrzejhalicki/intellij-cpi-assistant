@@ -28,6 +28,6 @@ jobs:
             - Any important notes for reviewers
 
             Keep it concise and focus on the purpose and impact of the changes.
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: |
-            --model claude-sonnet-4-5-20250929
+            --model claude-3-5-haiku-20241022
