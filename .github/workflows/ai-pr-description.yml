@@ -1,10 +1,10 @@
 name: AI PR Description
 
 on:
-  workflow_run:
-    workflows: ["Test and Create PR"]
+  pull_request:
+    types: [opened, synchronize]
+  check_suite:
     types: [completed]
-    branches: [feature/**, fix/**, dev]
 
 permissions:
   contents: read
@@ -15,7 +15,9 @@ permissions:
 jobs:
   ai-description:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: |
+      (github.event_name == 'pull_request') ||
+      (github.event_name == 'check_suite' && github.event.check_suite.conclusion == 'success')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
