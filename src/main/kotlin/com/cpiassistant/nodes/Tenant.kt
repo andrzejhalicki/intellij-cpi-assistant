@@ -7,6 +7,7 @@ import kotlin.collections.mutableListOf
 class Tenant(override val id: String, override val name: String, cpiService: CpiService, favoritePackages: List<String> = mutableListOf<String>(),
              val tenantStateComponent: TenantStateComponent, override var isLoaded: Boolean = false) : BaseNode() {
 
+    override val type = "Tenant"
     val service: CpiService = cpiService;
     val packages: MutableList<CpiPackage> = mutableListOf<CpiPackage>();
     var isConnected: Boolean = false

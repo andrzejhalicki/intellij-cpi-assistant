@@ -5,4 +5,5 @@ abstract class BaseNode {
     abstract val name: String;
     abstract val id: String
     abstract var isLoaded: Boolean
+    abstract val type: String
 }
