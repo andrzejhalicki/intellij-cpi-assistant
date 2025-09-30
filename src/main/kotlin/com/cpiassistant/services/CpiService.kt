@@ -5,9 +5,7 @@ import com.cpiassistant.nodes.CpiArtifact
 import com.cpiassistant.nodes.CpiPackage
 import com.cpiassistant.nodes.CpiResource
 import com.cpiassistant.nodes.CpiScriptCollection
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
+import com.cpiassistant.services.NotificationService
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
@@ -58,34 +56,18 @@ class CpiService(
             val client = OkHttpClient()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    Notifications.Bus.notify(
-                        Notification(
-                            "Custom Notification Group",
-                            "Authentication Error",
-                            "Failed to authenticate: ${response.code}",
-                            NotificationType.ERROR
-                        )
-                    )
+                    NotificationService.getInstance().showError("Authentication Error", "Failed to authenticate: ${response.code}")
                     return false
                 }
 
                 val responseBody = response.body
-                responseBody?.let {
-                    val tokenResponse = it.string()
-                    accessToken = extractAccessToken(tokenResponse)
-                    expirationTime = extractExpirationTime(tokenResponse)
-                    return true
-                }
+                val tokenResponse = responseBody.string()
+                accessToken = extractAccessToken(tokenResponse)
+                expirationTime = extractExpirationTime(tokenResponse)
+                return true
             }
         } catch (e: Exception) {
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "Authentication Error",
-                    "An error occurred during authentication: ${e.message}",
-                    NotificationType.ERROR
-                )
-            )
+            NotificationService.getInstance().showError("Authentication Error", "An error occurred during authentication: ${e.message}")
         }
         return false
     }
@@ -97,14 +79,7 @@ class CpiService(
             val token = response.headers["X-CSRF-Token"]
             callback(token)
         } catch (e: Exception) {
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "CSRF Token Error",
-                    "Failed to fetch CSRF token: ${e.message}",
-                    NotificationType.ERROR
-                )
-            )
+            NotificationService.getInstance().showError("CSRF Token Error", "Failed to fetch CSRF token: ${e.message}")
             callback(null)
         }
     }
@@ -115,21 +90,15 @@ class CpiService(
             val call = this.makeAuthenticatedRequest("GET", "/IntegrationPackages")
             val response = call.execute()
             if (!response.isSuccessful) {
-                Notifications.Bus.notify(
-                    Notification(
-                        "Custom Notification Group",
-                        "Failed to get packages: ${response.code}",
-                        NotificationType.ERROR
-                    )
-                )
+                NotificationService.getInstance().showError("Failed to get packages: ${response.code}")
                 callback(emptyList())
                 return
             }
             val results = getResultFromJson(response)
             response.body.close()
             results.forEach {
-                val packageId = it.jsonObject["Id"].toString().replace("\"", "")
-                val cpiPackage = CpiPackage(packageId, it.jsonObject["Name"].toString().replace("\"", ""), this)
+                val packageId = it.jsonObject["Id"]?.jsonPrimitive?.content ?: ""
+                val cpiPackage = CpiPackage(packageId, it.jsonObject["Name"]?.jsonPrimitive?.content ?: "", this)
                 packages.add(cpiPackage)
             }
             this.fetchCSRFToken { token ->
@@ -137,14 +106,7 @@ class CpiService(
             }
             callback(packages)
         } catch (e: Exception) {
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "Error",
-                    "An error occurred while getting packages: ${e.message}",
-                    NotificationType.ERROR
-                )
-            )
+            NotificationService.getInstance().showError("Error", "An error occurred while getting packages: ${e.message}")
             callback(emptyList())
         }
 
@@ -160,34 +122,21 @@ class CpiService(
                 )
             val response = call.execute()
             if (!response.isSuccessful) {
-                Notifications.Bus.notify(
-                    Notification(
-                        "Custom Notification Group",
-                        "Failed to get artifacts: ${response.code}",
-                        NotificationType.ERROR
-                    )
-                )
+                NotificationService.getInstance().showError("Failed to get artifacts: ${response.code}")
                 callback(emptyList())
                 return
             }
             val results = getResultFromJson(response)
             response.body.close()
             results.forEach {
-                val artifactId = it.jsonObject["Id"].toString().replace("\"", "")
-                val artifact = CpiArtifact(artifactId, it.jsonObject["Name"].toString().replace("\"", ""), this)
+                val artifactId = it.jsonObject["Id"]?.jsonPrimitive?.content ?: ""
+                val artifact = CpiArtifact(artifactId, it.jsonObject["Name"]?.jsonPrimitive?.content ?: "", this)
                 //artifact.setResources(getResources(artifactId))
                 artifacts.add(artifact)
             }
             callback(artifacts)
         } catch (e: Exception) {
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "Error",
-                    "An error occurred while getting artifacts: ${e.message}",
-                    NotificationType.ERROR
-                )
-            )
+            NotificationService.getInstance().showError("Error", "An error occurred while getting artifacts: ${e.message}")
             callback(emptyList())
         }
     }
@@ -201,34 +150,22 @@ class CpiService(
             )
             val response = call.execute()
             if (!response.isSuccessful) {
-                Notifications.Bus.notify(
-                    Notification(
-                        "Custom Notification Group",
-                        "Failed to get script collections: ${response.code}",
-                        NotificationType.ERROR
-                    )
-                )
+                NotificationService.getInstance().showError("Failed to get script collections: ${response.code}")
                 callback(emptyList())
                 return
             }
             val results = getResultFromJson(response)
             response.body.close()
             results.forEach {
-                val collectionId = it.jsonObject["Id"].toString().replace("\"", "")
+                val collectionId = it.jsonObject["Id"]?.jsonPrimitive?.content ?: ""
                 val collection =
-                    CpiScriptCollection(collectionId, it.jsonObject["Name"].toString().replace("\"", ""), this)
+                    CpiScriptCollection(collectionId, it.jsonObject["Name"]?.jsonPrimitive?.content ?: "", this)
                 //artifact.setResources(getResources(artifactId))
                 collections.add(collection)
             }
             callback(collections)
         } catch (e: Exception) {
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "An error occurred while getting script collections: ${e.message}",
-                    NotificationType.ERROR
-                )
-            )
+            NotificationService.getInstance().showError("Error", "An error occurred while getting script collections: ${e.message}")
             callback(emptyList())
         }
     }
@@ -337,11 +274,11 @@ class CpiService(
         response.body.close()
         if (response.isSuccessful) {
             val d = jsonObject["d"] as JsonObject
-            callback(d["Status"].toString().replace("\"", ""), true)
+            callback(d["Status"]?.jsonPrimitive?.content ?: "", true)
         } else {
             val error = jsonObject["error"] as JsonObject
             val message = error["message"] as JsonObject
-            val value = message["value"].toString().replace("\"", "")
+            val value = message["value"]?.jsonPrimitive?.content ?: ""
             callback(value, false)
         }
     }
@@ -411,8 +348,8 @@ class CpiService(
         val results = getResultFromJson(response)
         response.body.close()
         results.forEach {
-            val resourceName = it.jsonObject["Name"].toString().replace("\"", "")
-            val resource = CpiResource(it.jsonObject["Id"].toString().replace("\"", ""), resourceName, "", artifactId)
+            val resourceName = it.jsonObject["Name"]?.jsonPrimitive?.content ?: ""
+            val resource = CpiResource(it.jsonObject["Id"]?.jsonPrimitive?.content ?: "", resourceName, "", artifactId)
             val path = fileNodes?.find { node -> node.artifactId == artifactId && node.name == resourceName }?.path
             resource.path = path ?: ""
             resources.add(resource)
@@ -432,7 +369,7 @@ class CpiService(
     }
 
     fun createResourceInternal(
-        artifactId: String,
+        @Suppress("UNUSED_PARAMETER") artifactId: String,
         name: String,
         content: String,
         endpoint: String,
@@ -453,8 +390,8 @@ class CpiService(
     }
 
     fun updateResourceInternal(
-        artifactId: String,
-        name: String,
+        @Suppress("UNUSED_PARAMETER") artifactId: String,
+        @Suppress("UNUSED_PARAMETER") name: String,
         content: String,
         endpoint: String,
         callback: (Boolean,String) -> Unit
@@ -466,7 +403,6 @@ class CpiService(
         val requestBody = jsonString.toRequestBody("application/json".toMediaTypeOrNull())
         val call = this.makeAuthenticatedRequest("PUT", endpoint, requestBody)
         val response = call.execute()
-        val res = response.isSuccessful
         response.body.close()
         callback(response.isSuccessful,response.message)
     }

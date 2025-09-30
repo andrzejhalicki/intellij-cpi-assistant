@@ -1,10 +1,8 @@
-package com.cpiassistant.actions;
+package com.cpiassistant.actions
 
 import com.cpiassistant.nodes.CpiArtifact
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
-import com.intellij.openapi.actionSystem.AnAction;
+import com.cpiassistant.services.NotificationService
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import org.jetbrains.annotations.NotNull
@@ -37,13 +35,7 @@ class RefreshArtifactAction : AnAction() {
             model.nodeStructureChanged(selectedNode)
             tree.expandPath(selectionPath)
 
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "Artifact ${artifact.name} refreshed.",
-                    NotificationType.INFORMATION
-                )
-            )
+            NotificationService.getInstance().showInfo("Artifact ${artifact.name} refreshed.")
         }
     }
 

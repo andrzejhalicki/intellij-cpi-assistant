@@ -1,20 +1,15 @@
 package com.cpiassistant.actions
 
-import CustomDataProvider
-import com.cpiassistant.nodes.BaseNode
 import com.cpiassistant.nodes.CpiArtifact
 import com.cpiassistant.nodes.CpiResource
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
+import com.cpiassistant.services.NotificationService
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.LocalFileSystem
 import org.jetbrains.annotations.NotNull
-import java.util.*
-import javax.swing.JComponent
+import java.util.Base64
 import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
@@ -39,20 +34,13 @@ class UpdateResourceAction : AnAction() {
         try {
             val fileEncoded = Base64.getEncoder().encodeToString(file.contentsToByteArray())
             artifact.isLoaded = false
-            artifact.updateResource(resource.name, fileEncoded) { res ->
+            artifact.updateResource(resource.name, fileEncoded) { _ ->
                 artifact.isLoaded = true
             }
             artifact.isLoaded = true
         } catch (e: Exception) {
             artifact.isLoaded = true
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "Error",
-                    "Error updating resource: ${e.message}",
-                    NotificationType.ERROR
-                )
-            )
+            NotificationService.getInstance().showError("Error", "Error updating resource: ${e.message}")
         }
     }
 

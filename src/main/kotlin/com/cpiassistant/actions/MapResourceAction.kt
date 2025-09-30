@@ -4,9 +4,7 @@ import FileNodeInfo
 import FileNodeStateComponent
 import com.cpiassistant.nodes.CpiArtifact
 import com.cpiassistant.nodes.CpiResource
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
+import com.cpiassistant.services.NotificationService
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -34,13 +32,7 @@ class MapResourceAction : AnAction() {
         val project: Project? = event.project
 
         if (selectedFiles.isEmpty()) {
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "No file selected.",
-                    NotificationType.INFORMATION
-                )
-            )
+            NotificationService.getInstance().showInfo("No file selected.")
             return
         }
 
@@ -57,22 +49,9 @@ class MapResourceAction : AnAction() {
             (tree.model as DefaultTreeModel).nodeStructureChanged(selectedNode)
             tree.updateUI()
 
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "Resource mapped successfully.",
-                    NotificationType.INFORMATION
-                )
-            )
+            NotificationService.getInstance().showSuccess("Resource mapped successfully.")
         } catch (e: Exception) {
-            Notifications.Bus.notify(
-                Notification(
-                    "Custom Notification Group",
-                    "Error",
-                    "Error mapping resource: ${e.message}",
-                    NotificationType.ERROR
-                )
-            )
+            NotificationService.getInstance().showError("Error", "Error mapping resource: ${e.message}")
         }
     }
 

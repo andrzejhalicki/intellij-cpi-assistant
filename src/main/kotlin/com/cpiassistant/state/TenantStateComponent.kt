@@ -35,9 +35,7 @@ public class TenantStateComponent : PersistentStateComponent<TenantStateComponen
     fun addTenant(tenant: TenantInfo) {
         val attributes = createCredentialAttributes(tenant.url, tenant.clientID)
         val credentials: Credentials = Credentials(tenant.clientID, tenant.clientSecret)
-        if (attributes != null) {
-            PasswordSafe.instance.set(attributes, credentials)
-        }
+        PasswordSafe.instance.set(attributes, credentials)
         tenant.clientSecret = ""
         state.tenants.add(tenant)
     }
@@ -47,16 +45,13 @@ public class TenantStateComponent : PersistentStateComponent<TenantStateComponen
     }
 
     fun getTenants(): List<TenantInfo> {
-        return this.state.tenants.filter { tenant -> true }.map { tenant ->
+        return this.state.tenants.filter { _ -> true }.map { tenant ->
             val attributes = createCredentialAttributes(tenant.url, tenant.clientID)
             val passwordSafe: PasswordSafe = PasswordSafe.instance
-
-            if (attributes != null) {
-                val credentials = passwordSafe[attributes]
-                if (credentials != null) {
-                    tenant.clientSecret = credentials.getPasswordAsString().toString()
-                    tenant.clientID = credentials.userName.toString()
-                }
+            val credentials = passwordSafe[attributes]
+            if (credentials != null) {
+                tenant.clientSecret = credentials.getPasswordAsString().toString()
+                tenant.clientID = credentials.userName.toString()
             }
             tenant
         }

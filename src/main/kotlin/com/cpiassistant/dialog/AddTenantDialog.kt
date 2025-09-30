@@ -7,6 +7,7 @@ import com.intellij.ui.components.JBTextField
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.awt.Color
 import java.awt.Component
 import javax.swing.*
@@ -69,10 +70,10 @@ class AddTenantDialog : DialogWrapper(true) {
         val json = Json { ignoreUnknownKeys = true }
         val jsonObject = json.parseToJsonElement(jsonString).jsonObject
         val oauth = jsonObject["oauth"] as JsonObject
-        url = oauth["url"].toString().replace("\"","")
-        tokenUrl = oauth["tokenurl"].toString().replace("\"","")
-        clientId = oauth["clientid"].toString().replace("\"","")
-        clientSecret = oauth["clientsecret"].toString().replace("\"","")
+        url = oauth["url"]?.jsonPrimitive?.content ?: ""
+        tokenUrl = oauth["tokenurl"]?.jsonPrimitive?.content ?: ""
+        clientId = oauth["clientid"]?.jsonPrimitive?.content ?: ""
+        clientSecret = oauth["clientsecret"]?.jsonPrimitive?.content ?: ""
 
         if (name.isEmpty() || url.isEmpty() || tokenUrl.isEmpty() || clientId.isEmpty() || clientSecret.isEmpty()) {
             setErrorText("Please fill all fields", null)
