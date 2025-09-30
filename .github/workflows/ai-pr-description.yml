@@ -1,0 +1,46 @@
+name: AI PR Description
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+  id-token: write
+
+jobs:
+  ai-description:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for tests to complete
+        run: |
+          echo "Waiting for tests to complete..."
+          sleep 30
+
+      - name: Check if tests passed
+        run: |
+          gh api repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha }}/status \
+            --jq '.state' | grep -q "success" || exit 1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate PR Description with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            Analyze the code changes in this PR and generate a concise, professional description.
+            Include:
+            - Brief summary of what this PR does
+            - Key changes made
+            - Any important notes for reviewers
+
+            Keep it concise and focus on the purpose and impact of the changes.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: |
+            --model claude-3-5-haiku-20241022

@@ -11,6 +11,7 @@ open class CpiArtifact(override val id: String, override val name: String, open 
                        override var isLoaded: Boolean = false
 ): BaseNode() {
     private val resources = mutableListOf<CpiResource>()
+    override val type = "IFlow"
 
     open fun getResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
         if(!this.resources.isEmpty()){
