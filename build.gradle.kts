@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.cpiassistant"
-version = "1.1.0"
+version = "1.2.0"
 
 repositories {
     mavenCentral()
@@ -13,6 +13,15 @@ repositories {
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14")
     implementation("net.minidev:json-smart:2.5.1")
+
+    // Testing dependencies
+    testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
+    testImplementation("org.mockito:mockito-core:5.1.1")
+    testImplementation("com.squareup.okhttp3:mockwebserver:5.0.0-alpha.14")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.0")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.9.0")
 }
 
 // Configure Gradle IntelliJ Plugin
@@ -40,7 +49,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("222")
-        untilBuild.set("251.*")
+        untilBuild.set("253.*")
     }
 
     signPlugin {
@@ -51,5 +60,12 @@ tasks {
 
     publishPlugin {
         token.set(System.getenv("PUBLISH_TOKEN"))
+    }
+
+    test {
+        useJUnitPlatform()
+        testLogging {
+            events("passed", "skipped", "failed")
+        }
     }
 }

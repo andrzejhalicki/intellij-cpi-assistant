@@ -67,3 +67,22 @@ When you have finished with the script update you can now deploy the flow or scr
 <img src=".github/images/CPIA-deploy.jpg" alt="Plugin Screenshot" width="200">
 
 It's also possible to add a new script directly under a flow or script collection with button `Add script`.
+
+## Version 1.2.0
+
+### Artifact refresh and sync of multiple scripts
+
+<img src=".github/images/CPI-refresh.jpg" alt="Plugin Screenshot" width="300">
+
+You can now refresh the artifact and sync multiple scripts at once. Right click on the artifact and choose `Refresh`. The plugin will check all scripts under the artifact and if there are any changes in the tenant it will refresh the tree.
+If there are multiple scripts in one artifact you can download them all at once. Right click on the artifact and choose `Sync all scripts`.
+
+### Favorites
+<img src=".github/images/CPI-favorites.jpg" alt="Plugin Screenshot" width="300">
+
+You can now mark your favorite packages with a star icon. Right click on the script and choose `Add to Favorites`. You can view all your favorite scripts in the `Favorites` node. These packages will be loaded first.
+
+### Improved status tracking of deployment and script update
+<img src=".github/images/CPI-deploy-status.jpg" alt="Plugin Screenshot" width="300">
+
+Progress bar will now show the status of deployment and script update.
