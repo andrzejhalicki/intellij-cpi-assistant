@@ -34,7 +34,7 @@ class AddResourceAction : AnAction() {
         val selectedFiles = FileChooser.chooseFiles(descriptor, project, null)
 
         if (selectedFiles.isEmpty()) {
-            NotificationService.getInstance().showInfo("No file selected.")
+            NotificationService.getInstance()?.showInfo("No file selected.")
             return
         }
 
@@ -44,7 +44,7 @@ class AddResourceAction : AnAction() {
             val fileEncoded = Base64.getEncoder().encodeToString(selectedFile.contentsToByteArray())
             artifact.addResource(newResource.id, fileEncoded) { res ->
                 if (!res) {
-                    NotificationService.getInstance().showError("Error", "Failed to add resource to the artifact. Check if artifact is not locked.")
+                    NotificationService.getInstance()?.showError("Error", "Failed to add resource to the artifact. Check if artifact is not locked.")
                     return@addResource
                 }
 
@@ -54,7 +54,7 @@ class AddResourceAction : AnAction() {
                 }
             }
         } catch (e: Exception) {
-            NotificationService.getInstance().showError("Error", "Error processing file: ${e.message}")
+            NotificationService.getInstance()?.showError("Error", "Error processing file: ${e.message}")
         }
     }
 

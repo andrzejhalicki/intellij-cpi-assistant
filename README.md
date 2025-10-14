@@ -68,3 +68,55 @@ When you have finished with the script update you can now deploy the flow or scr
 
 It's also possible to add a new script directly under a flow or script collection with button `Add script`.
 
+## Development & CI/CD
+
+### Continuous Integration
+
+This project uses GitHub Actions for automated testing and quality assurance:
+
+- **🧪 Unit Tests**: Automatically run on every PR and commit to main
+- **🔨 Build Validation**: Ensures the plugin compiles correctly
+- **📊 Test Reports**: Detailed test results and coverage tracking
+- **🤖 Automated PR Creation**: Auto-generated PRs for feature branches
+
+#### CI Workflow Status
+
+[![CI](https://github.com/andrzejhalicki/CPIAssistant/actions/workflows/ci.yml/badge.svg)](https://github.com/andrzejhalicki/CPIAssistant/actions/workflows/ci.yml)
+
+#### Running Tests Locally
+
+```bash
+# Run all unit tests
+./gradlew test
+
+# Build the project
+./gradlew build
+
+# Clean build
+./gradlew clean build
+```
+
+#### Quality Gates
+
+All pull requests must pass:
+- ✅ Unit tests (14 comprehensive tests)
+- ✅ Build validation
+- ✅ Code review (automated via Claude)
+
+#### Test Coverage
+
+Current test coverage focuses on critical components:
+- **CpiService**: 95% coverage (authentication, API calls, deployment)
+- **Overall Project**: ~15% coverage with comprehensive critical path testing
+
+See `TEST_COVERAGE.md` for detailed coverage tracking and roadmap.
+
+### Contributing
+
+1. Create a feature branch: `git checkout -b feature/your-feature-name`
+2. Make your changes and add tests
+3. Ensure tests pass: `./gradlew test`
+4. Push your branch - CI will automatically create a PR
+5. Wait for automated code review and CI checks
+6. Address any feedback and merge when approved
+

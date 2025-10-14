@@ -45,9 +45,9 @@ class DeleteTenantAction : AnAction() {
             treeModel.removeNodeFromParent(selectedNode)
             treeModel.reload()
 
-            NotificationService.getInstance().showInfo("Tenant '${tenant.name}' has been deleted successfully.")
+            NotificationService.getInstance()?.showInfo("Tenant '${tenant.name}' has been deleted successfully.")
         } catch (e: Exception) {
-            NotificationService.getInstance().showError("Error", "Error deleting tenant: ${e.message}")
+            NotificationService.getInstance()?.showError("Error", "Error deleting tenant: ${e.message}")
         }
 
     }

@@ -50,7 +50,7 @@ class AddTenant : AnAction() {
                 newTenant.isConnected = isAuthenticated
 
                 if (!isAuthenticated) {
-                    NotificationService.getInstance().showWarning("Warning", "Tenant added but authentication failed. Please check your credentials.")
+                    NotificationService.getInstance()?.showWarning("Warning", "Tenant added but authentication failed. Please check your credentials.")
                 }
 
                 val newTenantNode = DefaultMutableTreeNode(newTenant)
@@ -62,12 +62,12 @@ class AddTenant : AnAction() {
                         treeService.updateTree(newTenantNode)
                     } catch (e: Exception) {
                         ApplicationManager.getApplication().invokeLater {
-                            NotificationService.getInstance().showError("Error", "Error updating tree: ${e.message}")
+                            NotificationService.getInstance()?.showError("Error", "Error updating tree: ${e.message}")
                         }
                     }
                 }
             } catch (e: Exception) {
-                NotificationService.getInstance().showError("Error", "Error updating tenant")
+                NotificationService.getInstance()?.showError("Error", "Error updating tenant")
             }
         }
     }

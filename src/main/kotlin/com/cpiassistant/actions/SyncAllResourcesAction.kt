@@ -32,7 +32,7 @@ class SyncAllResourcesAction : AnAction() {
         val selectedFolders = FileChooser.chooseFiles(descriptor, event.project, null)
 
         if (selectedFolders.isEmpty()) {
-            NotificationService.getInstance().showInfo("No folder selected.")
+            NotificationService.getInstance()?.showInfo("No folder selected.")
             return
         }
 
@@ -76,10 +76,10 @@ class SyncAllResourcesAction : AnAction() {
                             file?.setBinaryContent(content.toByteArray())
                         }
                         ApplicationManager.getApplication().invokeLater {
-                            NotificationService.getInstance().showSuccess("Script ${resource.name} synced successfully.")
+                            NotificationService.getInstance()?.showSuccess("Script ${resource.name} synced successfully.")
                         }
                     } catch (e: Exception) {
-                        NotificationService.getInstance().showError("Failed to sync script ${resource.name}: ${e.message}")
+                        NotificationService.getInstance()?.showError("Failed to sync script ${resource.name}: ${e.message}")
                     }
                 }
             }

@@ -37,9 +37,9 @@ open class CpiArtifact(override val id: String, override val name: String, open 
         createResourceInService(name, content) { res ->
             val notificationService = NotificationService.getInstance()
             if(res) {
-                notificationService.showSuccess("Resource $name added")
+                notificationService?.showSuccess("Resource $name added")
             } else {
-                notificationService.showError("Resource $name not added")
+                notificationService?.showError("Resource $name not added")
             }
             callback(res)
         }
@@ -53,9 +53,9 @@ open class CpiArtifact(override val id: String, override val name: String, open 
         updateResourceInService(name, content) { success, message ->
             val notificationService = NotificationService.getInstance()
             if(success) {
-                notificationService.showSuccess("Resource $name updated")
+                notificationService?.showSuccess("Resource $name updated")
             } else {
-                notificationService.showError("Resource $name not updated", message)
+                notificationService?.showError("Resource $name not updated", message)
             }
             callback(success)
         }
@@ -83,10 +83,10 @@ open class CpiArtifact(override val id: String, override val name: String, open 
                         service.checkDeploymentStatus(taskId) { status, success ->
                             if(success == true && status == "SUCCESS") {
                                 running = false
-                                NotificationService.getInstance().showSuccess("Deployment of ${this@CpiArtifact.name} Succeeded")
+                                NotificationService.getInstance()?.showSuccess("Deployment of ${this@CpiArtifact.name} Succeeded")
                             } else if(success == false) {
                                 running = false
-                                NotificationService.getInstance().showError("${this@CpiArtifact.name}: $status")
+                                NotificationService.getInstance()?.showError("${this@CpiArtifact.name}: $status")
                             }
                         }
                         Thread.sleep(3000)

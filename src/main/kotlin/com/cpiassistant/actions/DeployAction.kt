@@ -1,14 +1,18 @@
 package com.cpiassistant.actions
 
 import CustomDataProvider
-import com.cpiassistant.deployment.DeploymentBackgroundTask
 import com.cpiassistant.nodes.CpiArtifact
 import com.cpiassistant.nodes.CpiScriptCollection
 import com.cpiassistant.nodes.Tenant
+import com.cpiassistant.operations.DeploymentOperationExecutor
+import com.cpiassistant.operations.DeploymentPhase
+import com.cpiassistant.operations.OperationBackgroundTask
+import com.cpiassistant.operations.OperationManager
 import com.cpiassistant.services.NotificationService
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressManager
 import org.jetbrains.annotations.NotNull
 import javax.swing.JComponent
@@ -46,28 +50,41 @@ class DeployAction : AnAction() {
 
             try {
                 val tenantName = getTenantName(selectedNode)
+                val artifactType = when (artifact) {
+                    is CpiScriptCollection -> "ScriptCollection"
+                    else -> "IntegrationFlow"
+                }
 
-                // Create and run background task
-                val backgroundTask = DeploymentBackgroundTask(
-                    project = project,
+                // Create deployment operation executor
+                val executor = DeploymentOperationExecutor(
                     artifactId = artifact.id,
-                    artifactName = artifact.name,
-                    artifactType = when (artifact) {
-                        is CpiScriptCollection -> "ScriptCollection"
-                        else -> "IntegrationFlow"
-                    },
-                    tenantName = tenantName,
+                    artifactType = artifactType,
                     service = artifact.service
+                )
+
+                // Start the operation in the manager
+                val operationManager = project.service<OperationManager>()
+                val taskId = operationManager.startOperation(
+                    targetName = artifact.name,
+                    tenantName = tenantName,
+                    executor = executor
+                )
+
+                // Create and run background task to monitor progress
+                val backgroundTask = OperationBackgroundTask<DeploymentPhase>(
+                    project = project,
+                    taskId = taskId,
+                    taskTitle = "Deploying ${artifact.name}"
                 )
 
                 // Run the task in background with progress indicator
                 ProgressManager.getInstance().run(backgroundTask)
 
             } catch (e: Exception) {
-                NotificationService.getInstance().showError("Deployment Error", "Failed to start deployment: ${e.message}")
+                NotificationService.getInstance()?.showError("Deployment Error", "Failed to start deployment: ${e.message}")
             }
         } else {
-            NotificationService.getInstance().showError("Deployment Error", "No artifact selected for deployment")
+            NotificationService.getInstance()?.showError("Deployment Error", "No artifact selected for deployment")
         }
     }
 
