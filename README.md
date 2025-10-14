@@ -67,4 +67,3 @@ When you have finished with the script update you can now deploy the flow or scr
 <img src=".github/images/CPIA-deploy.jpg" alt="Plugin Screenshot" width="200">
 
 It's also possible to add a new script directly under a flow or script collection with button `Add script`.
-

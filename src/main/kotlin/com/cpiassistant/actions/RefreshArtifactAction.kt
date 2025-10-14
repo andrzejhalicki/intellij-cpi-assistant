@@ -35,7 +35,7 @@ class RefreshArtifactAction : AnAction() {
             model.nodeStructureChanged(selectedNode)
             tree.expandPath(selectionPath)
 
-            NotificationService.getInstance().showInfo("Artifact ${artifact.name} refreshed.")
+            NotificationService.getInstance()?.showInfo("Artifact ${artifact.name} refreshed.")
         }
     }
 

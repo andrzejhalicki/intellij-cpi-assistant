@@ -3,7 +3,13 @@
   <component name="TenantState">
     <option name="tenants">
       <list>
-        <TenantInfo name="Int4" url="https://int4-cloud-integration-cf-u0ujl6hs.it-cpi018.cfapps.eu10-003.hana.ondemand.com" tokenUrl="https://int4-cloud-integration-cf-u0ujl6hs.authentication.eu10.hana.ondemand.com/oauth/token" clientID="sb-ad682a55-d5a1-49ec-8cf4-8e837353205b!b152182|it!b117912" />
+        <TenantInfo name="Int4" url="https://int4-cloud-integration-cf-u0ujl6hs.it-cpi018.cfapps.eu10-003.hana.ondemand.com" tokenUrl="https://int4-cloud-integration-cf-u0ujl6hs.authentication.eu10.hana.ondemand.com/oauth/token" clientID="sb-ad682a55-d5a1-49ec-8cf4-8e837353205b!b152182|it!b117912" clientSecret="f1ea3d20-0eb9-4fb9-8f9a-c40097ceefaf$hN8oyFqvtg5q6ZAWeaFdKHCHUzYQFz0uPL0fO1We29Y=">
+          <favoritePackages>
+            <list>
+              <option value="InternalAH" />
+            </list>
+          </favoritePackages>
+        </TenantInfo>
       </list>
     </option>
   </component>

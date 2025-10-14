@@ -11,8 +11,12 @@ class NotificationService {
     companion object {
         private const val GROUP_ID = "Custom Notification Group"
 
-        fun getInstance(): NotificationService {
-            return com.intellij.openapi.application.ApplicationManager.getApplication().getService(NotificationService::class.java)
+        fun getInstance(): NotificationService? {
+            return try {
+                com.intellij.openapi.application.ApplicationManager.getApplication()?.getService(NotificationService::class.java)
+            } catch (e: Exception) {
+                null
+            }
         }
     }
 

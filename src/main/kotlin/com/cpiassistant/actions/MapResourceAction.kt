@@ -32,7 +32,7 @@ class MapResourceAction : AnAction() {
         val project: Project? = event.project
 
         if (selectedFiles.isEmpty()) {
-            NotificationService.getInstance().showInfo("No file selected.")
+            NotificationService.getInstance()?.showInfo("No file selected.")
             return
         }
 
@@ -49,9 +49,9 @@ class MapResourceAction : AnAction() {
             (tree.model as DefaultTreeModel).nodeStructureChanged(selectedNode)
             tree.updateUI()
 
-            NotificationService.getInstance().showSuccess("Resource mapped successfully.")
+            NotificationService.getInstance()?.showSuccess("Resource mapped successfully.")
         } catch (e: Exception) {
-            NotificationService.getInstance().showError("Error", "Error mapping resource: ${e.message}")
+            NotificationService.getInstance()?.showError("Error", "Error mapping resource: ${e.message}")
         }
     }
 

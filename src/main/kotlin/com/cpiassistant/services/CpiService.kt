@@ -29,9 +29,9 @@ class CpiService(
     private var accessToken: String? = null
     private var expirationTime: Instant? = null
     private var csrfToken: String? = null
-    private val project: Project? = ProjectManager.getInstance().openProjects.firstOrNull()
-    private val fileNodeStateComponent = project?.service<FileNodeStateComponent>()
-    private val fileNodes = fileNodeStateComponent?.getFileNodes()
+    private val project: Project? by lazy { ProjectManager.getInstance().openProjects.firstOrNull() }
+    private val fileNodeStateComponent by lazy { project?.service<FileNodeStateComponent>() }
+    private val fileNodes by lazy { fileNodeStateComponent?.getFileNodes() }
 
     @OptIn(ExperimentalEncodingApi::class)
     fun authenticate(): Boolean {
@@ -56,7 +56,7 @@ class CpiService(
             val client = OkHttpClient()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    NotificationService.getInstance().showError("Authentication Error", "Failed to authenticate: ${response.code}")
+                    NotificationService.getInstance()?.showError("Authentication Error", "Failed to authenticate: ${response.code}")
                     return false
                 }
 
@@ -67,7 +67,7 @@ class CpiService(
                 return true
             }
         } catch (e: Exception) {
-            NotificationService.getInstance().showError("Authentication Error", "An error occurred during authentication: ${e.message}")
+            NotificationService.getInstance()?.showError("Authentication Error", "An error occurred during authentication: ${e.message}")
         }
         return false
     }
@@ -79,7 +79,7 @@ class CpiService(
             val token = response.headers["X-CSRF-Token"]
             callback(token)
         } catch (e: Exception) {
-            NotificationService.getInstance().showError("CSRF Token Error", "Failed to fetch CSRF token: ${e.message}")
+            NotificationService.getInstance()?.showError("CSRF Token Error", "Failed to fetch CSRF token: ${e.message}")
             callback(null)
         }
     }
@@ -90,7 +90,7 @@ class CpiService(
             val call = this.makeAuthenticatedRequest("GET", "/IntegrationPackages")
             val response = call.execute()
             if (!response.isSuccessful) {
-                NotificationService.getInstance().showError("Failed to get packages: ${response.code}")
+                NotificationService.getInstance()?.showError("Failed to get packages: ${response.code}")
                 callback(emptyList())
                 return
             }
@@ -106,7 +106,7 @@ class CpiService(
             }
             callback(packages)
         } catch (e: Exception) {
-            NotificationService.getInstance().showError("Error", "An error occurred while getting packages: ${e.message}")
+            NotificationService.getInstance()?.showError("Error", "An error occurred while getting packages: ${e.message}")
             callback(emptyList())
         }
 
@@ -122,7 +122,7 @@ class CpiService(
                 )
             val response = call.execute()
             if (!response.isSuccessful) {
-                NotificationService.getInstance().showError("Failed to get artifacts: ${response.code}")
+                NotificationService.getInstance()?.showError("Failed to get artifacts: ${response.code}")
                 callback(emptyList())
                 return
             }
@@ -136,7 +136,7 @@ class CpiService(
             }
             callback(artifacts)
         } catch (e: Exception) {
-            NotificationService.getInstance().showError("Error", "An error occurred while getting artifacts: ${e.message}")
+            NotificationService.getInstance()?.showError("Error", "An error occurred while getting artifacts: ${e.message}")
             callback(emptyList())
         }
     }
@@ -150,7 +150,7 @@ class CpiService(
             )
             val response = call.execute()
             if (!response.isSuccessful) {
-                NotificationService.getInstance().showError("Failed to get script collections: ${response.code}")
+                NotificationService.getInstance()?.showError("Failed to get script collections: ${response.code}")
                 callback(emptyList())
                 return
             }
@@ -165,7 +165,7 @@ class CpiService(
             }
             callback(collections)
         } catch (e: Exception) {
-            NotificationService.getInstance().showError("Error", "An error occurred while getting script collections: ${e.message}")
+            NotificationService.getInstance()?.showError("Error", "An error occurred while getting script collections: ${e.message}")
             callback(emptyList())
         }
     }
