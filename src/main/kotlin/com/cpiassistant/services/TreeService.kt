@@ -11,6 +11,7 @@ import com.cpiassistant.toolWindow.MyTreeModel
 import com.cpiassistant.toolWindow.TreeCellRenderer
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
@@ -93,26 +94,42 @@ class TreeService(private val project: Project) {
         val cpiTenant = tenant.userObject as Tenant
         val favoritesNode = DefaultMutableTreeNode(Favorites())
         tenant.add(favoritesNode)
+
+        // Fetch and add all package nodes
         cpiTenant.getPackages { packages ->
             packages.forEach { ps ->
                 tenant.add(DefaultMutableTreeNode(ps))
             }
         }
+
+        // Add favorite package nodes
         cpiTenant.favoritePackages.forEach { favPackage ->
             favoritesNode.add(DefaultMutableTreeNode(favPackage))
         }
-        tenant.children().asIterator().forEach { p ->
+
+        // Snapshot children to a list to avoid iterator issues during tree modification
+        val childrenList = tenant.children().toList()
+        childrenList.forEach { p ->
             val packageNode = p as DefaultMutableTreeNode
             if (packageNode.userObject is Favorites) {
-                packageNode.children().asIterator().forEach { fp ->
+                // Load favorite packages
+                val favChildrenList = packageNode.children().toList()
+                favChildrenList.forEach { fp ->
                     val favPackageNode = fp as DefaultMutableTreeNode
                     loadPackage(favPackageNode)
                 }
                 return@forEach
             }
+            // Load regular packages
             loadPackage(packageNode)
         }
+
+        // Mark tenant as loaded and notify tree model on EDT
         cpiTenant.isLoaded = true
+        ApplicationManager.getApplication().invokeLater {
+            val model = tree.model as DefaultTreeModel
+            model.nodeStructureChanged(tenant)
+        }
     }
 
     private fun loadPackage(packageNode: DefaultMutableTreeNode) {
@@ -125,6 +142,11 @@ class TreeService(private val project: Project) {
                     resources.forEach { resource ->
                         artifactNode.add(DefaultMutableTreeNode(resource))
                         resource.isLoaded = true
+                    }
+                    // Notify tree model on EDT after resources are loaded
+                    ApplicationManager.getApplication().invokeLater {
+                        val model = tree.model as DefaultTreeModel
+                        model.nodeStructureChanged(artifactNode)
                     }
                 }
                 artifact.isLoaded = true
@@ -139,11 +161,21 @@ class TreeService(private val project: Project) {
                         collectionNode.add(DefaultMutableTreeNode(resource))
                         resource.isLoaded = true
                     }
+                    // Notify tree model on EDT after resources are loaded
+                    ApplicationManager.getApplication().invokeLater {
+                        val model = tree.model as DefaultTreeModel
+                        model.nodeStructureChanged(collectionNode)
+                    }
                 }
                 scriptCollection.isLoaded = true
             }
         }
         cpiPackage.isLoaded = true
+        // Notify tree model on EDT after package is fully loaded
+        ApplicationManager.getApplication().invokeLater {
+            val model = tree.model as DefaultTreeModel
+            model.nodeStructureChanged(packageNode)
+        }
     }
 
     private fun handleRightClick(e: MouseEvent?, tree: Tree) {
