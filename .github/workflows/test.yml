@@ -1,4 +1,4 @@
-name: Test
+name: Test and Create PR
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  id-token: write  # Required for Claude Code action
 
 jobs:
   test:
@@ -31,3 +32,51 @@ jobs:
 
       - name: Run tests
         run: ./gradlew test
+
+  create-pr:
+    needs: [test]  # Only run if tests pass
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create or update PR
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          PR_TITLE="Auto: ${BRANCH_NAME}"
+          PR_BODY="Automated PR for branch ${BRANCH_NAME}"
+
+          if gh pr list --head "${BRANCH_NAME}" --json number | grep -q number; then
+            echo "PR already exists, will be updated by ai-description job"
+          else
+            echo "Creating new PR"
+            gh pr create --title "${PR_TITLE}" --body "${PR_BODY}" --base main --draft
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  ai-description:
+    needs: [test, create-pr]  # Only run after tests pass AND PR is created
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for diff analysis
+
+      - name: Generate PR Description with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            Analyze the code changes in this PR and generate a concise, professional description.
+            Include:
+            - Brief summary of what this PR does
+            - Key changes made
+            - Any important notes for reviewers
+
+            Use `gh pr edit ${{ github.ref_name }} --body "your generated description"` to update the PR description.
+
+            Keep it concise and focus on the purpose and impact of the changes.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: |
+            --model claude-3-5-haiku-20241022 --allowed-tools "Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
