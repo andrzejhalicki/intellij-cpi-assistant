@@ -1,9 +1,9 @@
 package com.cpiassistant.services
 
 import CustomDataProvider
-import com.cpiassistant.nodes.CpiArtifact
+import com.cpiassistant.nodes.artifact.CpiArtifact
 import com.cpiassistant.nodes.CpiPackage
-import com.cpiassistant.nodes.CpiResource
+import com.cpiassistant.nodes.resource.CpiResource
 import com.cpiassistant.nodes.Favorites
 import com.cpiassistant.nodes.Tenant
 import com.cpiassistant.toolWindow.MyTreeCellEditor

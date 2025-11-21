@@ -4,8 +4,8 @@ import CustomDataProvider
 import FileNodeInfo
 import FileNodeStateComponent
 import com.cpiassistant.nodes.BaseNode
-import com.cpiassistant.nodes.CpiArtifact
-import com.cpiassistant.nodes.CpiResource
+import com.cpiassistant.nodes.artifact.CpiArtifact
+import com.cpiassistant.nodes.resource.CpiResource
 import com.cpiassistant.services.NotificationService
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -26,7 +26,7 @@ class AddResourceAction : AnAction() {
         val project = event.project
         val tree = event.getData(PlatformDataKeys.CONTEXT_COMPONENT) as JTree
         val dataProvider = tree.getClientProperty("CustomDataProvider") as? CustomDataProvider
-        val artifact = dataProvider?.getData("com.cpiassistant.nodes.CpiArtifact") as? CpiArtifact
+        val artifact = dataProvider?.getData("com.cpiassistant.nodes.artifact.CpiArtifact") as? CpiArtifact
         val selectionPath: TreePath? = tree.selectionPath
         val selectedNode = selectionPath?.lastPathComponent as? DefaultMutableTreeNode ?: return
 
@@ -39,10 +39,10 @@ class AddResourceAction : AnAction() {
         }
 
         val selectedFile: VirtualFile = selectedFiles[0]
-        val newResource = CpiResource(selectedFile.name, selectedFile.name, selectedFile.path, artifact!!.id)
+        val newResource = CpiResource.create(selectedFile.name, selectedFile.name, selectedFile.path, artifact!!.id)
         try {
             val fileEncoded = Base64.getEncoder().encodeToString(selectedFile.contentsToByteArray())
-            artifact.addResource(newResource.id, fileEncoded) { res ->
+            artifact.addResource(newResource, fileEncoded) { res ->
                 if (!res) {
                     NotificationService.getInstance()?.showError("Error", "Failed to add resource to the artifact. Check if artifact is not locked.")
                     return@addResource

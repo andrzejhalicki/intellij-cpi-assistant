@@ -3,7 +3,7 @@
     <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
     <id>com.cpiassistant.CPIAssistant</id>
 
-    <version>1.2.1</version>
+    <version>1.3.0</version>
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
     <name>CPI Assistant</name>
@@ -27,9 +27,14 @@
   ]]></description>
 
     <change-notes><![CDATA[
-        <h2>Bug fixes</h2>
+        <h2>Features</h2>
         <ul>
-            <li>Loading artifacts no longer stops when expanding the package</li>
+            <li>Download and map single resource</li>
+            <li>Added support for XSLT</li>
+        </ul>
+        <h2>Fixes</h2>
+        <ul>
+            <li>Standardized naming and icons for actions</li>
         </ul>
 ]]></change-notes>
 
@@ -81,14 +86,14 @@
         </action>
         <action id="com.cpiassistant.actions.AddPackageToFavoritesAction"
                 class="com.cpiassistant.actions.AddPackageToFavoritesAction"
-                text="Add to Favorites"
+                text="Add To Favorites"
                 description="Add to Favorites"
                 icon="com.cpiassistant.MyIcons.Star">
             <add-to-group group-id="com.cpiassistant.actions.PackageActionGroup"/>
         </action>
         <action id="com.cpiassistant.actions.RemovePackageFromFavoritesAction"
                 class="com.cpiassistant.actions.RemovePackageFromFavoritesAction"
-                text="Remove from Favorites"
+                text="Remove From Favorites"
                 description="Remove from Favorites"
                 icon="com.cpiassistant.MyIcons.Delete">
             <add-to-group group-id="com.cpiassistant.actions.FavoritePackageActionGroup"/>
@@ -114,10 +119,10 @@
                 icon="com.cpiassistant.MyIcons.Refresh">
             <add-to-group group-id="com.cpiassistant.actions.ArtifactActionGroup"/>
         </action>
-        <action id="com.cpiassistant.actions.SyncAllResourcesAction"
-                class="com.cpiassistant.actions.SyncAllResourcesAction"
-                text="Sync All Scripts"
-                description="Sync all scripts"
+        <action id="com.cpiassistant.actions.DownloadAllResourcesAction"
+                class="com.cpiassistant.actions.DownloadAllResourcesAction"
+                text="Download All Resources"
+                description="Download all resources"
                 icon="com.cpiassistant.MyIcons.Download">
             <add-to-group group-id="com.cpiassistant.actions.ArtifactActionGroup"/>
         </action>
@@ -125,7 +130,7 @@
                 class="com.cpiassistant.actions.UpdateResourceAction"
                 text="Update In Tenant"
                 description="Update in tenant"
-                icon="com.cpiassistant.MyIcons.Refresh">
+                icon="com.cpiassistant.MyIcons.Upload">
             <add-to-group group-id="com.cpiassistant.actions.ResourceActionGroup"/>
         </action>
         <action id="com.cpiassistant.actions.MapResourceAction"
@@ -135,10 +140,17 @@
                 icon="com.cpiassistant.MyIcons.AddFile">
             <add-to-group group-id="com.cpiassistant.actions.ResourceActionGroup"/>
         </action>
-        <action id="com.cpiassistant.actions.GetResourceAction"
-                class="com.cpiassistant.actions.GetResourceAction"
-                text="Sync from Tenant"
-                description="Sync from Tenant"
+        <action id="com.cpiassistant.actions.SyncFromTenantAction"
+                class="com.cpiassistant.actions.SyncFromTenantAction"
+                text="Sync From Tenant"
+                description="Sync From Tenant"
+                icon="com.cpiassistant.MyIcons.Refresh">
+            <add-to-group group-id="com.cpiassistant.actions.ResourceActionGroup"/>
+        </action>
+        <action id="com.cpiassistant.actions.DownloadResourceAction"
+                class="com.cpiassistant.actions.DownloadResourceAction"
+                text="Download From Tenant"
+                description="Download resource from tenant and map to local directory"
                 icon="com.cpiassistant.MyIcons.Download">
             <add-to-group group-id="com.cpiassistant.actions.ResourceActionGroup"/>
         </action>

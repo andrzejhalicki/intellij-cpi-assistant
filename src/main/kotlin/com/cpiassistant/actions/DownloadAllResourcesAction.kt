@@ -1,12 +1,14 @@
 package com.cpiassistant.actions
 
-import com.cpiassistant.nodes.CpiArtifact
+import FileNodeInfo
+import FileNodeStateComponent
+import com.cpiassistant.nodes.artifact.CpiArtifact
 import com.cpiassistant.services.NotificationService
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.components.service
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.project.Project
@@ -17,9 +19,10 @@ import org.jetbrains.annotations.NotNull
 import java.io.File
 import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
-class SyncAllResourcesAction : AnAction() {
+class DownloadAllResourcesAction : AnAction() {
 
     override fun actionPerformed(@NotNull event: AnActionEvent) {
         val project: Project? = event.project
@@ -29,6 +32,8 @@ class SyncAllResourcesAction : AnAction() {
         val artifact = selectedNode.userObject as CpiArtifact
 
         val descriptor = FileChooserDescriptor(false, true, false, false, false, false)
+            .withTitle("Select Folder to Download Scripts")
+            .withDescription("Choose where to save resources")
         val selectedFolders = FileChooser.chooseFiles(descriptor, event.project, null)
 
         if (selectedFolders.isEmpty()) {
@@ -44,14 +49,16 @@ class SyncAllResourcesAction : AnAction() {
             return
         }
 
+        val fileNodeStateComponent = project?.service<FileNodeStateComponent>()
+
         var overwriteAll = false
         artifact.getResources(artifact.id) { resources ->
             resources.forEach { resource ->
-                artifact.downloadResource(resource.name) { content ->
+                artifact.downloadResource(resource) { content ->
                     try {
                         val filePath = selectedFolder.path + File.separator + resource.name
                         var file = LocalFileSystem.getInstance().findFileByPath(filePath)
-                        if (file == null || !file.exists()){
+                        if (file == null || !file.exists()) {
                             WriteCommandAction.runWriteCommandAction(project) {
                                 file = selectedFolder.createChildData(this, resource.name)
                             }
@@ -72,18 +79,32 @@ class SyncAllResourcesAction : AnAction() {
                                 }
                             }
                         }
-                        WriteCommandAction.runWriteCommandAction(project) {
-                            file?.setBinaryContent(content.toByteArray())
+
+                        file?.let { file ->
+                            WriteCommandAction.runWriteCommandAction(project) {
+                                file.setBinaryContent(content.toByteArray())
+                            }
+                            val newNodeData = FileNodeInfo(file.name, file.path, artifact.id)
+                            fileNodeStateComponent?.addFileNode(newNodeData)
+
+                            resource.path = file.path
+
+                            NotificationService.getInstance()
+                                ?.showSuccess("Script ${resource.name} synced successfully.")
+                        } ?: run {
+                            NotificationService.getInstance()
+                                ?.showError("Failed to sync script ${resource.name}: File is null after creation.")
                         }
-                        ApplicationManager.getApplication().invokeLater {
-                            NotificationService.getInstance()?.showSuccess("Script ${resource.name} synced successfully.")
-                        }
+
                     } catch (e: Exception) {
-                        NotificationService.getInstance()?.showError("Failed to sync script ${resource.name}: ${e.message}")
+                        NotificationService.getInstance()
+                            ?.showError("Failed to sync script ${resource.name}: ${e.message}")
                     }
                 }
             }
         }
+        (tree.model as DefaultTreeModel).nodeStructureChanged(selectedNode)
+        tree.updateUI()
     }
 
 }

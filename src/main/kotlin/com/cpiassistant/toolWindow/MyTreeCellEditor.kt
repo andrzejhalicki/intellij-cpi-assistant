@@ -1,8 +1,6 @@
 package com.cpiassistant.toolWindow
 
 import com.cpiassistant.nodes.BaseNode
-import com.cpiassistant.nodes.CpiArtifact
-import com.cpiassistant.nodes.CpiResource
 import java.awt.Component
 import java.awt.event.FocusEvent
 import java.awt.event.FocusListener

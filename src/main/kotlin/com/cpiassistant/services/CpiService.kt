@@ -1,11 +1,10 @@
 package com.cpiassistant.services
 
 import FileNodeStateComponent
-import com.cpiassistant.nodes.CpiArtifact
+import com.cpiassistant.nodes.artifact.CpiArtifact
 import com.cpiassistant.nodes.CpiPackage
-import com.cpiassistant.nodes.CpiResource
-import com.cpiassistant.nodes.CpiScriptCollection
-import com.cpiassistant.services.NotificationService
+import com.cpiassistant.nodes.resource.CpiResource
+import com.cpiassistant.nodes.artifact.CpiScriptCollection
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
@@ -171,16 +170,20 @@ class CpiService(
     }
 
     fun getResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
-        val resources = this.getResourcesInternal(
+        val scripts = this.getResourcesInternal(
             artifactId,
             "/IntegrationDesigntimeArtifacts(Id='${artifactId}',Version='active')/Resources?\$filter=ResourceType eq 'groovy'"
         )
-        callback(resources)
+        val xslts = this.getResourcesInternal(
+            artifactId,
+            "/IntegrationDesigntimeArtifacts(Id='${artifactId}',Version='active')/Resources?\$filter=ResourceType eq 'xslt'"
+        )
+        callback(scripts + xslts)
     }
 
-    fun getResource(artifactId: String, resourceName: String, callback: (String) -> Unit) {
+    fun getResource(artifactId: String, resource: CpiResource, callback: (String) -> Unit) {
         val resource = this.getResourceInternal(
-            "/IntegrationDesigntimeArtifacts(Id='${artifactId}',Version='active')/Resources(Name='${resourceName}',ResourceType='groovy')/\$value"
+            "/IntegrationDesigntimeArtifacts(Id='${artifactId}',Version='active')/Resources(Name='${resource.name}',ResourceType='${resource.resourceType.value}')/\$value"
         )
         callback(resource)
     }
@@ -200,10 +203,11 @@ class CpiService(
         callback(resource)
     }
 
-    fun createResource(artifactId: String, name: String, content: String, callback: (Boolean) -> Unit) {
+    fun createResource(artifactId: String, resource: CpiResource, content: String, callback: (Boolean) -> Unit) {
         this.createResourceInternal(
             artifactId,
-            name,
+            resource.name,
+            resource.resourceType.value,
             content,
             "/IntegrationDesigntimeArtifacts(Id='${artifactId}',Version='active')/Resources"
         ) { res ->
@@ -211,10 +215,11 @@ class CpiService(
         }
     }
 
-    fun createScriptCollectionResource(artifactId: String, name: String, content: String, callback: (Boolean) -> Unit) {
+    fun createScriptCollectionResource(artifactId: String, resource: CpiResource, content: String, callback: (Boolean) -> Unit) {
         this.createResourceInternal(
             artifactId,
-            name,
+            resource.name,
+            resource.resourceType.value,
             content,
             "/ScriptCollectionDesigntimeArtifacts(Id='${artifactId}',Version='active')/Resources"
         ) { res ->
@@ -222,12 +227,12 @@ class CpiService(
         }
     }
 
-    fun updateResource(artifactId: String, name: String, content: String, callback: (Boolean,String) -> Unit) {
+    fun updateResource(artifactId: String, resource: CpiResource, content: String, callback: (Boolean,String) -> Unit) {
         this.updateResourceInternal(
             artifactId,
-            name,
+            resource.name,
             content,
-            "/IntegrationDesigntimeArtifacts(Id='${artifactId}',Version='active')/\$links/Resources(Name='${name}',ResourceType='groovy')"
+            "/IntegrationDesigntimeArtifacts(Id='${artifactId}',Version='active')/\$links/Resources(Name='${resource.name}',ResourceType='${resource.resourceType.value}')"
         ) { success, message ->
             callback(success, message)
         }
@@ -349,7 +354,7 @@ class CpiService(
         response.body.close()
         results.forEach {
             val resourceName = it.jsonObject["Name"]?.jsonPrimitive?.content ?: ""
-            val resource = CpiResource(it.jsonObject["Id"]?.jsonPrimitive?.content ?: "", resourceName, "", artifactId)
+            val resource = CpiResource.create(it.jsonObject["Id"]?.jsonPrimitive?.content ?: "", resourceName, "", artifactId)
             val path = fileNodes?.find { node -> node.artifactId == artifactId && node.name == resourceName }?.path
             resource.path = path ?: ""
             resources.add(resource)
@@ -371,13 +376,14 @@ class CpiService(
     fun createResourceInternal(
         @Suppress("UNUSED_PARAMETER") artifactId: String,
         name: String,
+        suffix: String,
         content: String,
         endpoint: String,
         callback: (Boolean) -> Unit
     ) {
         val jsonObject = JSONObject()
         jsonObject.put("Name", name)
-        jsonObject.put("ResourceType", "groovy")
+        jsonObject.put("ResourceType", suffix)
         jsonObject.put("ResourceContent", content)
         val jsonString = jsonObject.toString()
 

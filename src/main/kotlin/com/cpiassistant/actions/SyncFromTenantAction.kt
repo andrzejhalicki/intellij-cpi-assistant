@@ -1,7 +1,7 @@
 package com.cpiassistant.actions
 
-import com.cpiassistant.nodes.CpiArtifact
-import com.cpiassistant.nodes.CpiResource
+import com.cpiassistant.nodes.artifact.CpiArtifact
+import com.cpiassistant.nodes.resource.CpiResource
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -16,7 +16,7 @@ import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
 
-class GetResourceAction : AnAction() {
+class SyncFromTenantAction : AnAction() {
 
     override fun actionPerformed(@NotNull event: AnActionEvent) {
         val project: Project? = event.project
@@ -42,7 +42,7 @@ class GetResourceAction : AnAction() {
             }
         }
 
-        artifact.downloadResource(resource.name) { content ->
+        artifact.downloadResource(resource) { content ->
             val file = LocalFileSystem.getInstance().findFileByPath(resource.path)
             if (file == null || !file.exists()) {
                 Messages.showInfoMessage("File does not exist", resource.path)
