@@ -36,7 +36,7 @@ open class CpiArtifact(override val id: String, override val name: String, open 
 
     open fun addResource(resource: CpiResource, content: String, callback: (Boolean) -> Unit) {
         createResourceInService(resource, content) { res ->
-            val notificationService = NotificationService.Companion.getInstance()
+            val notificationService = NotificationService.getInstance()
             if(res) {
                 notificationService?.showSuccess("Resource $name added")
             } else {

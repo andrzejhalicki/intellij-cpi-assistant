@@ -2,7 +2,7 @@ package com.cpiassistant.nodes.resource
 
 import com.cpiassistant.nodes.BaseNode
 
-enum class ResourceType(val value: String) {
+enum class ResourceType(val value: String, val fileExtension: String) {
     GROOVY("groovy", ".groovy"),
     XSLT("xslt", ".xslt"),
     UNKNOWN("", "")

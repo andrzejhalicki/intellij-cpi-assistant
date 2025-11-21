@@ -182,10 +182,10 @@ class CpiService(
     }
 
     fun getResource(artifactId: String, resource: CpiResource, callback: (String) -> Unit) {
-        val resource = this.getResourceInternal(
+        val downloadedResource = this.getResourceInternal(
             "/IntegrationDesigntimeArtifacts(Id='${artifactId}',Version='active')/Resources(Name='${resource.name}',ResourceType='${resource.resourceType.value}')/\$value"
         )
-        callback(resource)
+        callback(downloadedResource)
     }
 
     fun getScriptCollectionResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {

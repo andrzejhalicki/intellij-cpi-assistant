@@ -74,21 +74,21 @@ class TreeCellRenderer() : DefaultTreeCellRenderer() {
 
     private fun buildFavorites(renderer: JPanel, favorites: Favorites) {
         renderer.add(JBLabel(MyIcons.Star))
-        renderer.add(JLabel(favorites.name));
+        renderer.add(JLabel(favorites.name))
     }
 
     private fun buildPackage(renderer: JPanel, cpiPackage: CpiPackage) {
         renderer.add(JBLabel(MyIcons.Loading))
         val icon = JBLabel(MyIcons.Package)
         renderer.add(icon)
-        renderer.add(JLabel(cpiPackage.name));
+        renderer.add(JLabel(cpiPackage.name))
     }
 
     private fun buildArtifact(renderer: JPanel, cpiArtifact: CpiArtifact) {
         renderer.add(JBLabel(MyIcons.Loading))
         val icon = JBLabel(MyIcons.Artifact)
         renderer.add(icon)
-        renderer.add(JBLabel(cpiArtifact.name));
+        renderer.add(JBLabel(cpiArtifact.name))
     }
 
     private fun buildScriptCollection(renderer: JPanel, cpiScriptCollection: CpiScriptCollection) {

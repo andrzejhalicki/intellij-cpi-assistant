@@ -89,7 +89,7 @@ class ScriptUpdateOperationExecutor(
         return currentTask
     }
 
-    override fun getPhases(): List<ScriptUpdatePhase> = ScriptUpdatePhase.values().toList()
+    override fun getPhases(): List<ScriptUpdatePhase> = ScriptUpdatePhase.entries.toList()
 
     override fun getOperationTypeName(): String = "Script Update"
 
