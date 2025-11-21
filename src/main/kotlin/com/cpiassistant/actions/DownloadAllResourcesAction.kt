@@ -80,14 +80,14 @@ class DownloadAllResourcesAction : AnAction() {
                             }
                         }
 
-                        file?.let { file ->
+                        file?.let { nonNullFile ->
                             WriteCommandAction.runWriteCommandAction(project) {
-                                file.setBinaryContent(content.toByteArray())
+                                nonNullFile.setBinaryContent(content.toByteArray())
                             }
-                            val newNodeData = FileNodeInfo(file.name, file.path, artifact.id)
+                            val newNodeData = FileNodeInfo(nonNullFile.name, nonNullFile.path, artifact.id)
                             fileNodeStateComponent?.addFileNode(newNodeData)
 
-                            resource.path = file.path
+                            resource.path = nonNullFile.path
 
                             NotificationService.getInstance()
                                 ?.showSuccess("Script ${resource.name} synced successfully.")

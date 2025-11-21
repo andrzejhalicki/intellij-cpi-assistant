@@ -143,7 +143,7 @@
         <action id="com.cpiassistant.actions.SyncFromTenantAction"
                 class="com.cpiassistant.actions.SyncFromTenantAction"
                 text="Sync From Tenant"
-                description="Sync From Tenant"
+                description="Sync from Tenant"
                 icon="com.cpiassistant.MyIcons.Refresh">
             <add-to-group group-id="com.cpiassistant.actions.ResourceActionGroup"/>
         </action>
