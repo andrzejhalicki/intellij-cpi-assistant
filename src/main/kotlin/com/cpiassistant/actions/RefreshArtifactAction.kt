@@ -1,6 +1,6 @@
 package com.cpiassistant.actions
 
-import com.cpiassistant.nodes.CpiArtifact
+import com.cpiassistant.nodes.artifact.CpiArtifact
 import com.cpiassistant.services.NotificationService
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent

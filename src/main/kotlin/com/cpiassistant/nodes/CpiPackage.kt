@@ -1,5 +1,7 @@
 package com.cpiassistant.nodes
 
+import com.cpiassistant.nodes.artifact.CpiArtifact
+import com.cpiassistant.nodes.artifact.CpiScriptCollection
 import com.cpiassistant.services.CpiService
 
 class CpiPackage(override val id: String, override val name: String, private val service: CpiService, override var isLoaded: Boolean = false): BaseNode() {

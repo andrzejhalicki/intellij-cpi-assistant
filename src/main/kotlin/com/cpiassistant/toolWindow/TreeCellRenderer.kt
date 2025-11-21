@@ -2,6 +2,10 @@ package com.cpiassistant.toolWindow
 
 import com.cpiassistant.MyIcons
 import com.cpiassistant.nodes.*
+import com.cpiassistant.nodes.artifact.CpiArtifact
+import com.cpiassistant.nodes.artifact.CpiScriptCollection
+import com.cpiassistant.nodes.resource.CpiResource
+import com.cpiassistant.nodes.resource.ResourceType
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBLabel
 import java.awt.*
@@ -70,21 +74,21 @@ class TreeCellRenderer() : DefaultTreeCellRenderer() {
 
     private fun buildFavorites(renderer: JPanel, favorites: Favorites) {
         renderer.add(JBLabel(MyIcons.Star))
-        renderer.add(JLabel(favorites.name));
+        renderer.add(JLabel(favorites.name))
     }
 
     private fun buildPackage(renderer: JPanel, cpiPackage: CpiPackage) {
         renderer.add(JBLabel(MyIcons.Loading))
         val icon = JBLabel(MyIcons.Package)
         renderer.add(icon)
-        renderer.add(JLabel(cpiPackage.name));
+        renderer.add(JLabel(cpiPackage.name))
     }
 
     private fun buildArtifact(renderer: JPanel, cpiArtifact: CpiArtifact) {
         renderer.add(JBLabel(MyIcons.Loading))
         val icon = JBLabel(MyIcons.Artifact)
         renderer.add(icon)
-        renderer.add(JBLabel(cpiArtifact.name));
+        renderer.add(JBLabel(cpiArtifact.name))
     }
 
     private fun buildScriptCollection(renderer: JPanel, cpiScriptCollection: CpiScriptCollection) {
@@ -96,7 +100,11 @@ class TreeCellRenderer() : DefaultTreeCellRenderer() {
 
     private fun buildResource(renderer: JPanel, resource: CpiResource) {
         renderer.add(JBLabel(MyIcons.Loading))
-        val icon = JBLabel(MyIcons.Script)
+        val icon = when(resource.resourceType) {
+            ResourceType.GROOVY -> JBLabel(MyIcons.Script)
+            ResourceType.XSLT -> JBLabel(MyIcons.Xml)
+            else -> JBLabel(MyIcons.Script)
+        }
         renderer.add(icon)
         renderer.add(JLabel(resource.name))
         val pathLabel = JBLabel(resource.path)

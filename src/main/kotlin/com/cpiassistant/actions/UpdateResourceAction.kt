@@ -1,7 +1,7 @@
 package com.cpiassistant.actions
 
-import com.cpiassistant.nodes.CpiArtifact
-import com.cpiassistant.nodes.CpiResource
+import com.cpiassistant.nodes.artifact.CpiArtifact
+import com.cpiassistant.nodes.resource.CpiResource
 import com.cpiassistant.nodes.Tenant
 import com.cpiassistant.operations.OperationBackgroundTask
 import com.cpiassistant.operations.OperationManager
@@ -63,7 +63,7 @@ class UpdateResourceAction : AnAction() {
             // Create script update operation executor
             val executor = ScriptUpdateOperationExecutor(
                 artifact = artifact,
-                resourceName = resource.name,
+                resource = resource,
                 content = fileEncoded
             )
 

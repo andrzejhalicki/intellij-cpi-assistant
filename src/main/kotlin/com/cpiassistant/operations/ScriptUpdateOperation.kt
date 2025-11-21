@@ -1,7 +1,8 @@
 package com.cpiassistant.operations
 
-import com.cpiassistant.nodes.CpiArtifact
-import com.cpiassistant.nodes.CpiScriptCollection
+import com.cpiassistant.nodes.artifact.CpiArtifact
+import com.cpiassistant.nodes.artifact.CpiScriptCollection
+import com.cpiassistant.nodes.resource.CpiResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -24,7 +25,7 @@ enum class ScriptUpdatePhase(
  */
 class ScriptUpdateOperationExecutor(
     private val artifact: CpiArtifact,
-    private val resourceName: String,
+    private val resource: CpiResource,
     private val content: String
 ) : OperationExecutor<ScriptUpdatePhase> {
 
@@ -56,7 +57,7 @@ class ScriptUpdateOperationExecutor(
             onUpdate(currentTask)
 
             // Perform the actual update
-            val (success, message) = updateResource(artifact, resourceName, content)
+            val (success, message) = updateResource(artifact, resource, content)
 
             if (!success) {
                 return currentTask.withError("Upload failed: $message")
@@ -88,13 +89,13 @@ class ScriptUpdateOperationExecutor(
         return currentTask
     }
 
-    override fun getPhases(): List<ScriptUpdatePhase> = ScriptUpdatePhase.values().toList()
+    override fun getPhases(): List<ScriptUpdatePhase> = ScriptUpdatePhase.entries.toList()
 
     override fun getOperationTypeName(): String = "Script Update"
 
     private suspend fun updateResource(
         artifact: CpiArtifact,
-        resourceName: String,
+        resource: CpiResource,
         content: String
     ): Pair<Boolean, String> {
         return withContext(Dispatchers.IO) {
@@ -104,12 +105,12 @@ class ScriptUpdateOperationExecutor(
                 // The notification will be shown by OperationManager instead
                 when (artifact) {
                     is CpiScriptCollection -> {
-                        artifact.service.updateScriptCollectionResource(artifact.id, resourceName, content) { success, message ->
+                        artifact.service.updateScriptCollectionResource(artifact.id, resource.name, content) { success, message ->
                             continuation.resumeWith(Result.success(Pair(success, message)))
                         }
                     }
                     else -> {
-                        artifact.service.updateResource(artifact.id, resourceName, content) { success, message ->
+                        artifact.service.updateResource(artifact.id, resource, content) { success, message ->
                             continuation.resumeWith(Result.success(Pair(success, message)))
                         }
                     }

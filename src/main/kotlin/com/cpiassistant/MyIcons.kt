@@ -1,6 +1,5 @@
 package com.cpiassistant
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.AnimatedIcon
 
@@ -14,6 +13,8 @@ object MyIcons {
     val Artifact = IconLoader.getIcon("/icons/objectGroup.svg", javaClass)
     @JvmField
     val Script = IconLoader.getIcon("/icons/scriptingScript.svg", javaClass)
+    @JvmField
+    val Xml = IconLoader.getIcon("/icons/xml.svg", javaClass)
     @JvmField
     val Add = IconLoader.getIcon("/icons/add.svg", javaClass)
     @JvmField
@@ -34,6 +35,8 @@ object MyIcons {
     val ScriptCollection = IconLoader.getIcon("/icons/listFiles.svg", javaClass)
     @JvmField
     val Download = IconLoader.getIcon("/icons/download.svg", javaClass)
+    @JvmField
+    val Upload = IconLoader.getIcon("/icons/upload.svg", javaClass)
     @JvmField
     val Star = IconLoader.getIcon("/icons/star.svg", javaClass)
 }

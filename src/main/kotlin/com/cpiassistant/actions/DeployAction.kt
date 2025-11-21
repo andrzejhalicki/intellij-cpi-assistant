@@ -1,8 +1,8 @@
 package com.cpiassistant.actions
 
 import CustomDataProvider
-import com.cpiassistant.nodes.CpiArtifact
-import com.cpiassistant.nodes.CpiScriptCollection
+import com.cpiassistant.nodes.artifact.CpiArtifact
+import com.cpiassistant.nodes.artifact.CpiScriptCollection
 import com.cpiassistant.nodes.Tenant
 import com.cpiassistant.operations.DeploymentOperationExecutor
 import com.cpiassistant.operations.DeploymentPhase
@@ -41,7 +41,7 @@ class DeployAction : AnAction() {
         val project = event.project ?: return
         val component = event.getData(PlatformDataKeys.CONTEXT_COMPONENT) as? JComponent
         val dataProvider = component?.getClientProperty("CustomDataProvider") as? CustomDataProvider
-        val artifact = dataProvider?.getData("com.cpiassistant.nodes.CpiArtifact") as? CpiArtifact
+        val artifact = dataProvider?.getData("com.cpiassistant.nodes.artifact.CpiArtifact") as? CpiArtifact
         val tree = event.getData(PlatformDataKeys.CONTEXT_COMPONENT) as JTree
         val selectionPath: TreePath? = tree.selectionPath
         val selectedNode = selectionPath?.lastPathComponent as? DefaultMutableTreeNode ?: return
