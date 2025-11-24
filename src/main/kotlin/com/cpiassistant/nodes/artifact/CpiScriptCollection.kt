@@ -1,11 +1,14 @@
 package com.cpiassistant.nodes.artifact
 
+import com.cpiassistant.nodes.NodeType
 import com.cpiassistant.nodes.resource.CpiResource
 import com.cpiassistant.services.CpiService
 
 class CpiScriptCollection(override val id: String, override val name: String, override val service: CpiService,
                           override var isLoaded: Boolean = false
 ): CpiArtifact(id, name, service, isLoaded) {
+
+    override val type = NodeType.SCRIPT_COLLECTION
 
     override fun getResourcesFromService(artifactId: String, callback: (List<CpiResource>) -> Unit) {
         this.service.getScriptCollectionResources(artifactId, callback)

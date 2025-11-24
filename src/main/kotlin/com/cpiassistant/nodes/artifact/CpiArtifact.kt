@@ -1,6 +1,7 @@
 package com.cpiassistant.nodes.artifact
 
 import com.cpiassistant.nodes.BaseNode
+import com.cpiassistant.nodes.NodeType
 import com.cpiassistant.nodes.resource.CpiResource
 import com.cpiassistant.services.CpiService
 import com.cpiassistant.services.NotificationService
@@ -9,7 +10,8 @@ open class CpiArtifact(override val id: String, override val name: String, open 
                        override var isLoaded: Boolean = false
 ): BaseNode() {
     private val resources = mutableListOf<CpiResource>()
-    override val type = "IFlow"
+    override var isLoading: Boolean = false
+    override val type = NodeType.IFLOW
 
     open fun getResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
         if(!this.resources.isEmpty()){

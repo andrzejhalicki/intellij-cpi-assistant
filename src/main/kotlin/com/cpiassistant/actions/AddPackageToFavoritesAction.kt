@@ -25,11 +25,9 @@ class AddPackageToFavoritesAction : AnAction() {
         val tenant = tenantNode.userObject as Tenant
 
         tenant.addPackageToFavorites(cpiPackage) { addedPackage ->
-            val favoritePackageNode = DefaultMutableTreeNode(addedPackage)
-            selectedNode.children().asIterator().forEach {
-                favoritePackageNode.add(it as DefaultMutableTreeNode)
-            }
-            favoritesNode.add(favoritePackageNode)
+            val addedPackageNode = DefaultMutableTreeNode(addedPackage)
+            addedPackage.isLoaded = false
+            favoritesNode.add(addedPackageNode)
         }
 
         val model = tree.model as DefaultTreeModel

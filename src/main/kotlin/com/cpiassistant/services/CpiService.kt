@@ -343,6 +343,10 @@ class CpiService(
         return client.newCall(requestBuilder.build())
     }
 
+    fun getResourcePath(artifactId: String, resourceName: String): String? {
+        return fileNodes?.find { node -> node.artifactId == artifactId && node.name == resourceName }?.path
+    }
+
     private fun getResourcesInternal(artifactId: String, endpoint: String): List<CpiResource> {
         val resources = mutableListOf<CpiResource>()
         val call = this.makeAuthenticatedRequest(
@@ -355,7 +359,7 @@ class CpiService(
         results.forEach {
             val resourceName = it.jsonObject["Name"]?.jsonPrimitive?.content ?: ""
             val resource = CpiResource.create(it.jsonObject["Id"]?.jsonPrimitive?.content ?: "", resourceName, "", artifactId)
-            val path = fileNodes?.find { node -> node.artifactId == artifactId && node.name == resourceName }?.path
+            val path = getResourcePath(artifactId,resourceName)
             resource.path = path ?: ""
             resources.add(resource)
         }

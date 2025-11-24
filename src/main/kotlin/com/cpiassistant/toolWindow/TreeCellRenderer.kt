@@ -6,109 +6,64 @@ import com.cpiassistant.nodes.artifact.CpiArtifact
 import com.cpiassistant.nodes.artifact.CpiScriptCollection
 import com.cpiassistant.nodes.resource.CpiResource
 import com.cpiassistant.nodes.resource.ResourceType
+import com.intellij.ide.util.treeView.NodeRenderer
 import com.intellij.ui.SimpleTextAttributes
-import com.intellij.ui.components.JBLabel
-import java.awt.*
-import javax.swing.*
+import javax.swing.Icon
+import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.DefaultTreeCellRenderer
 
 
-class TreeCellRenderer() : DefaultTreeCellRenderer() {
+class TreeCellRenderer : NodeRenderer() {
 
-    override fun getTreeCellRendererComponent(
-        tree: JTree?,
+    override fun customizeCellRenderer(
+        tree: JTree,
         value: Any?,
         selected: Boolean,
         expanded: Boolean,
         leaf: Boolean,
         row: Int,
         hasFocus: Boolean
-    ): Component {
-        val renderer = JPanel(FlowLayout(FlowLayout.LEFT))
-        if ((value != null) && (value is DefaultMutableTreeNode)) {
-            val userObject = value.userObject
-            if(userObject == "Root") {
-                buildRoot(renderer)
-            } else if (userObject is Tenant) {
-                buildTenant(renderer, userObject)
-                if (userObject.isLoaded) {
-                    renderer.remove(0)
+    ) {
+        if (value is DefaultMutableTreeNode) {
+            when (val userObject = value.userObject) {
+                "Root" -> {
+                    append("Systems")
                 }
-            } else if (userObject is Favorites) {
-                buildFavorites(renderer, userObject)
-            } else if (userObject is CpiPackage) {
-                buildPackage(renderer, userObject)
-                if (userObject.isLoaded) {
-                    renderer.remove(0)
+                is Tenant -> {
+                    icon = getIconWithLoading(MyIcons.Tenant, userObject.isLoading)
+                    append(userObject.name)
                 }
-            } else if (userObject is CpiArtifact && userObject !is CpiScriptCollection) {
-                buildArtifact(renderer, userObject)
-                if (userObject.isLoaded) {
-                    renderer.remove(0)
+                is Favorites -> {
+                    icon = getIconWithLoading(MyIcons.Star, userObject.isLoading)
+                    append(userObject.name)
                 }
-            } else if (userObject is CpiScriptCollection) {
-                buildScriptCollection(renderer, userObject)
-                if (userObject.isLoaded) {
-                    renderer.remove(0)
+                is CpiPackage -> {
+                    icon = getIconWithLoading(MyIcons.Package, userObject.isLoading)
+                    append(userObject.name)
                 }
-            } else if (userObject is CpiResource) {
-                buildResource(renderer, userObject)
-                if (userObject.isLoaded) {
-                    renderer.remove(0)
+                is CpiScriptCollection -> {
+                    icon = getIconWithLoading(MyIcons.ScriptCollection, userObject.isLoading)
+                    append(userObject.name)
+                }
+                is CpiArtifact -> {
+                    icon = getIconWithLoading(MyIcons.Artifact, userObject.isLoading)
+                    append(userObject.name)
+                }
+                is CpiResource -> {
+                    val resourceIcon = when (userObject.resourceType) {
+                        ResourceType.GROOVY -> MyIcons.Script
+                        ResourceType.XSLT -> MyIcons.Xml
+                        else -> MyIcons.Script
+                    }
+                    icon = getIconWithLoading(resourceIcon, userObject.isLoading)
+                    append(userObject.name)
+                    append(" ${userObject.path}", SimpleTextAttributes.GRAYED_ATTRIBUTES)
                 }
             }
         }
-        return renderer
     }
 
-    private fun buildRoot(renderer: JPanel) {
-        renderer.add(JBLabel("Systems"))
-    }
-
-    private fun buildTenant(renderer: JPanel, tenant: Tenant) {
-        renderer.add(JBLabel(MyIcons.Loading))
-        renderer.add(JBLabel(MyIcons.Tenant))
-        renderer.add(JLabel(tenant.name))
-    }
-
-    private fun buildFavorites(renderer: JPanel, favorites: Favorites) {
-        renderer.add(JBLabel(MyIcons.Star))
-        renderer.add(JLabel(favorites.name))
-    }
-
-    private fun buildPackage(renderer: JPanel, cpiPackage: CpiPackage) {
-        renderer.add(JBLabel(MyIcons.Loading))
-        val icon = JBLabel(MyIcons.Package)
-        renderer.add(icon)
-        renderer.add(JLabel(cpiPackage.name))
-    }
-
-    private fun buildArtifact(renderer: JPanel, cpiArtifact: CpiArtifact) {
-        renderer.add(JBLabel(MyIcons.Loading))
-        val icon = JBLabel(MyIcons.Artifact)
-        renderer.add(icon)
-        renderer.add(JBLabel(cpiArtifact.name))
-    }
-
-    private fun buildScriptCollection(renderer: JPanel, cpiScriptCollection: CpiScriptCollection) {
-        renderer.add(JBLabel(MyIcons.Loading))
-        val icon = JBLabel(MyIcons.ScriptCollection)
-        renderer.add(icon)
-        renderer.add(JBLabel(cpiScriptCollection.name))
-    }
-
-    private fun buildResource(renderer: JPanel, resource: CpiResource) {
-        renderer.add(JBLabel(MyIcons.Loading))
-        val icon = when(resource.resourceType) {
-            ResourceType.GROOVY -> JBLabel(MyIcons.Script)
-            ResourceType.XSLT -> JBLabel(MyIcons.Xml)
-            else -> JBLabel(MyIcons.Script)
-        }
-        renderer.add(icon)
-        renderer.add(JLabel(resource.name))
-        val pathLabel = JBLabel(resource.path)
-        pathLabel.foreground = SimpleTextAttributes.GRAYED_ATTRIBUTES.fgColor
-        renderer.add(pathLabel)
+    private fun getIconWithLoading(baseIcon: Icon, isLoading: Boolean): Icon {
+        return if (isLoading) MyIcons.Loading else baseIcon
     }
 }

@@ -7,7 +7,8 @@ import com.cpiassistant.services.CpiService
 class CpiPackage(override val id: String, override val name: String, private val service: CpiService, override var isLoaded: Boolean = false): BaseNode() {
     private val artifacts = mutableListOf<CpiArtifact>()
     private val scriptCollections = mutableListOf<CpiScriptCollection>()
-    override val type = "Package"
+    override var isLoading: Boolean = false
+    override val type = NodeType.PACKAGE
 
     fun getArtifacts(packageId: String, callback: (List<CpiArtifact>) -> Unit) {
         this.service.getArtifacts(packageId) { p ->
