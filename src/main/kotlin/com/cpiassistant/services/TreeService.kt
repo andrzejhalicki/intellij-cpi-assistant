@@ -15,6 +15,7 @@ import com.cpiassistant.toolWindow.TreeCellRenderer
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
@@ -31,9 +32,11 @@ import javax.swing.tree.DefaultTreeCellRenderer
 import javax.swing.tree.DefaultTreeModel
 
 @Service(Service.Level.PROJECT)
-class TreeService(private val project: Project) {
+class TreeService(private val project: Project) : Disposable {
 
     var tree: Tree = Tree()
+    private var treeExpansionListener: TreeExpansionListener? = null
+    private var mouseListener: MouseListener? = null
 
     init {
 
@@ -54,8 +57,10 @@ class TreeService(private val project: Project) {
 
         tree.putClientProperty(AnimatedIcon.ANIMATION_IN_RENDERER_ALLOWED, true)
 
-        // Add tree expansion listener for lazy loading
-        tree.addTreeExpansionListener(object : TreeExpansionListener {
+        treeExpansionListener?.let { tree.removeTreeExpansionListener(it) }
+        mouseListener?.let { tree.removeMouseListener(it) }
+
+        treeExpansionListener = object : TreeExpansionListener {
             override fun treeExpanded(event: TreeExpansionEvent) {
                 val expandedNode = event.path.lastPathComponent as? DefaultMutableTreeNode ?: return
                 handleNodeExpansion(expandedNode)
@@ -64,9 +69,10 @@ class TreeService(private val project: Project) {
             override fun treeCollapsed(event: TreeExpansionEvent) {
                 // No action needed on collapse
             }
-        })
+        }
+        tree.addTreeExpansionListener(treeExpansionListener)
 
-        tree.addMouseListener(object : MouseListener {
+        mouseListener = object : MouseListener {
             override fun mouseClicked(e: MouseEvent?) {
 
                 if (e == null) return
@@ -99,7 +105,9 @@ class TreeService(private val project: Project) {
 
             }
 
-        })
+        }
+        tree.addMouseListener(mouseListener)
+
         val renderer = TreeCellRenderer()
         tree.setCellRenderer(renderer)
         tree.cellEditor = MyTreeCellEditor(tree, DefaultTreeCellRenderer())
@@ -383,7 +391,8 @@ class TreeService(private val project: Project) {
     }
 
     private fun handleRightClick(e: MouseEvent?, tree: Tree) {
-        val path = tree.getPathForLocation(e!!.x, e.y)
+        if (e == null) return
+        val path = tree.getPathForLocation(e.x, e.y)
         if (path?.getLastPathComponent() == null) {
             return
         }
@@ -478,5 +487,12 @@ class TreeService(private val project: Project) {
             if (file == null || !file.exists()) return
             FileEditorManager.getInstance(project).openFile(file, true)
         }
+    }
+
+    override fun dispose() {
+        treeExpansionListener?.let { tree.removeTreeExpansionListener(it) }
+        mouseListener?.let { tree.removeMouseListener(it) }
+        treeExpansionListener = null
+        mouseListener = null
     }
 }

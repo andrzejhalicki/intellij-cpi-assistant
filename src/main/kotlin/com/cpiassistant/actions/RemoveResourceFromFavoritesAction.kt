@@ -51,7 +51,9 @@ class RemoveResourceFromFavoritesAction : AnAction() {
             val packageNode = artifactNode?.parent as? DefaultMutableTreeNode
             val cpiPackage = packageNode?.userObject as? CpiPackage
             val favoritesNode = packageNode?.parent as? DefaultMutableTreeNode
-            if (favoritesNode?.userObject is Favorites && !artifact?.autoLoad!! && !cpiPackage?.autoLoad!!) {
+            if (favoritesNode?.userObject is Favorites &&
+                artifact?.autoLoad == false &&
+                cpiPackage?.autoLoad == false) {
                 e.presentation.isEnabledAndVisible = true
                 return
             }

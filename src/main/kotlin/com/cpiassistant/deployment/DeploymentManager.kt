@@ -1,6 +1,7 @@
 package com.cpiassistant.deployment
 
 import com.cpiassistant.services.CpiService
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.*
@@ -13,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.min
 
 @Service(Service.Level.PROJECT)
-class DeploymentManager(private val project: Project) {
+class DeploymentManager(private val project: Project) : Disposable {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val _deploymentTasks = MutableStateFlow<Map<String, DeploymentTask>>(emptyMap())
@@ -204,5 +205,16 @@ class DeploymentManager(private val project: Project) {
 
     private fun generateTaskId(): String {
         return "deploy_${System.currentTimeMillis()}_${(1000..9999).random()}"
+    }
+
+    override fun dispose() {
+        // Cancel all active deployment jobs
+        activeDeployments.values.forEach { job ->
+            job.cancel()
+        }
+        activeDeployments.clear()
+
+        // Cancel the coroutine scope
+        scope.cancel()
     }
 }

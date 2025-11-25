@@ -46,7 +46,7 @@ class RemoveArtifactFromFavoritesAction : AnAction() {
             val packageNode = selectedNode.parent as? DefaultMutableTreeNode
             val cpiPackage = packageNode?.userObject as? CpiPackage
             val favoritesNode = packageNode?.parent as? DefaultMutableTreeNode
-            if (favoritesNode?.userObject is Favorites && !cpiPackage?.autoLoad!!) {
+            if (favoritesNode?.userObject is Favorites && cpiPackage?.autoLoad == false) {
                 e.presentation.isEnabledAndVisible = true
                 return
             }
