@@ -9,6 +9,7 @@ class CpiPackage(override val id: String, override val name: String, private val
     private val scriptCollections = mutableListOf<CpiScriptCollection>()
     override var isLoading: Boolean = false
     override val type = NodeType.PACKAGE
+    override var autoLoad: Boolean = false
 
     fun getArtifacts(packageId: String, callback: (List<CpiArtifact>) -> Unit) {
         this.service.getArtifacts(packageId) { p ->

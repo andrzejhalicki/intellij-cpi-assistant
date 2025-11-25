@@ -13,6 +13,7 @@ open class CpiResource(override val id: String, override val name: String, open 
     override var isLoading: Boolean = false
     override val type = NodeType.RESOURCE
     open val resourceType = ResourceType.UNKNOWN
+    override var autoLoad: Boolean = false
 
     companion object {
         fun create(id: String, name: String, path: String = "", parent: String, isLoaded: Boolean = false): CpiResource {

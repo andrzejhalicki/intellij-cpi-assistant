@@ -164,6 +164,7 @@ class TreeService(private val project: Project) {
                 val packageNode = DefaultMutableTreeNode(cpiPackage)
                 favoritesNode.add(packageNode)
                 cpiPackage.isLoading = true
+                cpiPackage.autoLoad = favPackage.autoLoad
                 ApplicationManager.getApplication().invokeLater {
                     val model = tree.model as DefaultTreeModel
                     model.nodeStructureChanged(packageNode)
@@ -246,6 +247,7 @@ class TreeService(private val project: Project) {
                 favArtifact.artifactName,
                 service
             )
+            artifact.autoLoad = favArtifact.autoLoad
             val artifactNode = DefaultMutableTreeNode(artifact)
             packageNode.add(artifactNode)
 
@@ -294,6 +296,7 @@ class TreeService(private val project: Project) {
     private fun loadFavPackage(packageNode: DefaultMutableTreeNode, tenant: Tenant) {
         val cpiPackage = packageNode.userObject as CpiPackage
         val packageInfo = tenant.favoritePackages.find { it.packageId == cpiPackage.id }
+        cpiPackage.autoLoad = packageInfo?.autoLoad == true
 
         if (packageInfo?.autoLoad == true) {
             loadFullPackageContent(cpiPackage, packageNode)

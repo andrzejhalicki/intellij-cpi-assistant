@@ -18,6 +18,7 @@ class Tenant(
 ) : BaseNode() {
 
     override var isLoading: Boolean = false
+    override var autoLoad: Boolean = false
     override val type = NodeType.TENANT
     val service: CpiService = cpiService;
     val packages: MutableList<CpiPackage> = mutableListOf<CpiPackage>();
@@ -100,8 +101,8 @@ class Tenant(
     fun removeResourceFromFavorites(cpiPackage: CpiPackage, artifact: CpiArtifact, resource: CpiResource) {
         this.favoritePackages.find { it.packageId == cpiPackage.id }?.let { pkg ->
             pkg.favoriteArtifacts.find { it.artifactId == artifact.id }?.let { art ->
-                art.favoriteResources.removeIf { it.resourceId == resource.id }
-                tenantStateComponent.removeFavoriteResource(this.id, cpiPackage.id, artifact.id, resource.id)
+                art.favoriteResources.removeIf { it.resourceName == resource.name }
+                tenantStateComponent.removeFavoriteResource(this.id, cpiPackage.id, artifact.id, resource.name)
             }
         }
     }

@@ -139,14 +139,14 @@ public class TenantStateComponent : PersistentStateComponent<TenantStateComponen
         return newFavResource
     }
 
-    fun removeFavoriteResource(tenantName: String, packageId: String, artifactId: String, resourceId: String) {
+    fun removeFavoriteResource(tenantName: String, packageId: String, artifactId: String, resourceName: String) {
         val tenant = state.tenants.find { it.name == tenantName }
         tenant?.let {
             val favoritePackage = it.favoritePackages.find { pkg -> pkg.packageId == packageId }
             favoritePackage?.let { pkg ->
                 val favoriteArtifact = pkg.favoriteArtifacts.find { artifact -> artifact.artifactId == artifactId }
                 favoriteArtifact?.let { artifact ->
-                    artifact.favoriteResources.removeIf { resource -> resource.resourceId == resourceId }
+                    artifact.favoriteResources.removeIf { resource -> resource.resourceName == resourceName }
                 }
             }
         }

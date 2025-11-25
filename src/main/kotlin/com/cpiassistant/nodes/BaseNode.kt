@@ -7,6 +7,7 @@ abstract class BaseNode {
     abstract var isLoaded: Boolean
     abstract var isLoading: Boolean
     abstract val type: NodeType
+    abstract var autoLoad: Boolean
 }
 
 enum class NodeType(val value: String) {

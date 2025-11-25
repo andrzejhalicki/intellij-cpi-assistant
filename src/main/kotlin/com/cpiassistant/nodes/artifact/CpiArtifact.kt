@@ -12,6 +12,7 @@ open class CpiArtifact(override val id: String, override val name: String, open 
     private val resources = mutableListOf<CpiResource>()
     override var isLoading: Boolean = false
     override val type = NodeType.IFLOW
+    override var autoLoad: Boolean = false
 
     open fun getResources(artifactId: String, callback: (List<CpiResource>) -> Unit) {
         if(!this.resources.isEmpty()){
