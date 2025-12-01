@@ -5,14 +5,14 @@ plugins {
 }
 
 group = "com.cpiassistant"
-version = "1.2.2"
+version = "1.3.0"
 
 repositories {
     mavenCentral()
 }
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14")
-    implementation("net.minidev:json-smart:2.5.1")
+    implementation("net.minidev:json-smart:2.5.2")
 
     // Testing dependencies
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")

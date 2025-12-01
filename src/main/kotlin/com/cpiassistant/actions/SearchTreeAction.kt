@@ -4,6 +4,7 @@ import com.cpiassistant.nodes.BaseNode
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ex.CustomComponentAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.SearchTextField
 import java.util.concurrent.Executors
@@ -11,7 +12,6 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import javax.swing.JComponent
 import javax.swing.JTree
-import javax.swing.SwingUtilities
 import javax.swing.tree.TreePath
 import javax.swing.tree.DefaultMutableTreeNode
 
@@ -48,17 +48,16 @@ class SearchTreeAction(private val tree: JTree) : AnAction(), CustomComponentAct
         val model = tree.model
         val root = model.root as? DefaultMutableTreeNode ?: return
 
-        // Recursively search for matching nodes
         val matchingPaths = mutableListOf<TreePath>()
         findMatchingNodes(root, query, matchingPaths, tree)
 
-        // Expand matching paths
-        for (path in matchingPaths) {
-            tree.expandPath(path)
-        }
+        ApplicationManager.getApplication().invokeLater {
 
-        if (matchingPaths.isNotEmpty()) {
-            SwingUtilities.invokeLater {
+            for (path in matchingPaths) {
+                tree.expandPath(path)
+            }
+
+            if (matchingPaths.isNotEmpty()) {
                 tree.scrollPathToVisible(matchingPaths.first())
                 tree.selectionPaths = matchingPaths.toTypedArray()
             }

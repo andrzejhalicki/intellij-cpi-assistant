@@ -86,3 +86,19 @@ You can now mark your favorite packages with a star icon. Right click on the scr
 <img src=".github/images/CPI-deploy-status.jpg" alt="Plugin Screenshot" width="300">
 
 Progress bar will now show the status of deployment and script update.
+
+## Version 1.3.0
+### Lazy loading of artifacts and resources
+Only packages are loaded on startup. Artifacts and resources are loaded when expanded. Exception is made for favorite packages which are loaded on startup in full scope.
+### Added support for XSLT
+<img src=".github/images/XSLT.jpg" alt="Plugin Screenshot" width="300">
+
+### Download and map single resource
+You can now download and map single resource from the tenant. Right click on the resource and choose `Download From Tenant`.
+
+<img src=".github/images/download-from-tenant.png" alt="Plugin Screenshot" width="300">
+
+### Favorites support for artifacts and resources. Favorite objects are loaded automatically.
+You can now mark your favorite artifacts and resources with a star icon. These will be loaded first. If you mark a whole package or artifact, the whole content will be loaded on startup.
+
+Right click on the artifact/resource and choose `Add to Favorites`.

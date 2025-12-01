@@ -34,6 +34,11 @@ class DownloadResourceAction : AnAction() {
         val artifact = (selectedNode.parent as DefaultMutableTreeNode).userObject as CpiArtifact
         val resource = selectedNode.userObject as CpiResource
 
+        downloadResource(resource, artifact, selectedNode, tree, project)
+
+    }
+
+    fun downloadResource(resource: CpiResource, artifact: CpiArtifact, selectedNode: DefaultMutableTreeNode, tree: JTree, project: Project?) {
         val descriptor = FileChooserDescriptor(false, true, false, false, false, false)
             .withTitle("Select Directory to Download Script")
             .withDescription("Choose where to save ${resource.name}")

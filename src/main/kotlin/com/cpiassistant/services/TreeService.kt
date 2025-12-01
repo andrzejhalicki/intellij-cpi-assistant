@@ -3,6 +3,7 @@ package com.cpiassistant.services
 import CustomDataProvider
 import FavoritePackageInfo
 import FavoriteResourceInfo
+import com.cpiassistant.actions.DownloadResourceAction
 import com.cpiassistant.nodes.artifact.CpiArtifact
 import com.cpiassistant.nodes.CpiPackage
 import com.cpiassistant.nodes.resource.CpiResource
@@ -145,15 +146,20 @@ class TreeService(private val project: Project) : Disposable {
 
         cpiTenant.isLoading = true
 
-        val model = tree.model as DefaultTreeModel
-        model.nodeChanged(tenant)
+        ApplicationManager.getApplication().invokeLater {
+            val model = tree.model as DefaultTreeModel
+            model.nodeChanged(tenant)
+        }
 
         val favorites = Favorites()
         val favoritesNode = DefaultMutableTreeNode(favorites)
         tenant.add(favoritesNode)
 
         favorites.isLoading = true
-        model.nodeChanged(favoritesNode)
+        ApplicationManager.getApplication().invokeLater {
+            val model = tree.model as DefaultTreeModel
+            model.nodeChanged(favoritesNode)
+        }
 
         ApplicationManager.getApplication().executeOnPooledThread {
 
@@ -322,8 +328,10 @@ class TreeService(private val project: Project) : Disposable {
 
         cpiPackage.isLoading = true
 
-        val model = tree.model as DefaultTreeModel
-        model.nodeChanged(packageNode)
+        ApplicationManager.getApplication().invokeLater {
+            val model = tree.model as DefaultTreeModel
+            model.nodeChanged(packageNode)
+        }
 
         val pendingOps = java.util.concurrent.atomic.AtomicInteger(2)
 
@@ -370,8 +378,10 @@ class TreeService(private val project: Project) : Disposable {
 
         artifact.isLoading = true
 
-        val model = tree.model as DefaultTreeModel
-        model.nodeChanged(artifactNode)
+        ApplicationManager.getApplication().invokeLater {
+            val model = tree.model as DefaultTreeModel
+            model.nodeChanged(artifactNode)
+        }
 
         ApplicationManager.getApplication().executeOnPooledThread {
             artifact.getResources(artifact.id) { resources ->
@@ -465,22 +475,9 @@ class TreeService(private val project: Project) : Disposable {
         if (nodeHoveredOver.userObject is CpiResource) {
             val resource = nodeHoveredOver.userObject as CpiResource
             if (resource.path.isEmpty()) {
-                tree.selectionPath = path
-                val action = ActionManager.getInstance().getAction("com.cpiassistant.actions.DownloadResourceAction")
-                val dataContext = com.intellij.openapi.actionSystem.DataContext { dataId ->
-                    when (dataId) {
-                        com.intellij.openapi.actionSystem.CommonDataKeys.PROJECT.name -> project
-                        com.intellij.openapi.actionSystem.PlatformDataKeys.CONTEXT_COMPONENT.name -> tree
-                        else -> null
-                    }
-                }
-                val event = com.intellij.openapi.actionSystem.AnActionEvent.createFromAnAction(
-                    action,
-                    null,
-                    "DoubleClick",
-                    dataContext
-                )
-                action.actionPerformed(event)
+                val parentNode = nodeHoveredOver.parent as DefaultMutableTreeNode
+                val artifact = parentNode.userObject as CpiArtifact
+                DownloadResourceAction().downloadResource(resource, artifact, nodeHoveredOver, tree, project)
                 return
             }
             val file = LocalFileSystem.getInstance().findFileByPath(resource.path)

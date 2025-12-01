@@ -29,29 +29,27 @@ class ToolWindowFactory : ToolWindowFactory {
         val content = ContentFactory.getInstance().createContent(treePanel, null, false)
         toolWindow.contentManager.removeAllContents(true)
         toolWindow.contentManager.addContent(content)
-        ApplicationManager.getApplication().executeOnPooledThread(object : Runnable {
-            override fun run() {
-                //Tree
-                val tree = treeService.buildTree()
-                myToolWindow.actionGroup.add(ExpandTreeAction(tree))
-                myToolWindow.actionGroup.add(CollapseTreeAction(tree))
-                myToolWindow.actionGroup.add(SearchTreeAction(tree))
 
-                val treeScrollPane = JBScrollPane(tree)
-                treePanel.add(treeScrollPane, BorderLayout.CENTER)
+        // Build tree and setup UI on EDT
+        ApplicationManager.getApplication().invokeLater {
+            val tree = treeService.buildTree()
+            myToolWindow.actionGroup.add(ExpandTreeAction(tree))
+            myToolWindow.actionGroup.add(CollapseTreeAction(tree))
+            myToolWindow.actionGroup.add(SearchTreeAction(tree))
 
-                val model = tree.model as DefaultTreeModel
-                val childCount = model.getChildCount(model.root)
-                for (i in 0 until childCount) {
-                    val child = model.getChild(model.root, i) as DefaultMutableTreeNode
-                    ApplicationManager.getApplication().executeOnPooledThread(object : Runnable {
-                        override fun run() {
-                            treeService.updateTree(child)
-                        }
-                    })
+            val treeScrollPane = JBScrollPane(tree)
+            treePanel.add(treeScrollPane, BorderLayout.CENTER)
+
+            // Load tenant data in background threads
+            val model = tree.model as DefaultTreeModel
+            val childCount = model.getChildCount(model.root)
+            for (i in 0 until childCount) {
+                val child = model.getChild(model.root, i) as DefaultMutableTreeNode
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    treeService.updateTree(child)
                 }
             }
-        })
+        }
     }
 
     override fun shouldBeAvailable(project: Project) = true
