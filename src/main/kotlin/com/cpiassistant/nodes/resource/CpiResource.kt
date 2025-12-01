@@ -1,6 +1,7 @@
 package com.cpiassistant.nodes.resource
 
 import com.cpiassistant.nodes.BaseNode
+import com.cpiassistant.nodes.NodeType
 
 enum class ResourceType(val value: String, val fileExtension: String) {
     GROOVY("groovy", ".groovy"),
@@ -9,8 +10,10 @@ enum class ResourceType(val value: String, val fileExtension: String) {
 }
 
 open class CpiResource(override val id: String, override val name: String, open var path: String = "", open val parent: String, override var isLoaded: Boolean = false): BaseNode() {
-    override val type = "Resource"
+    override var isLoading: Boolean = false
+    override val type = NodeType.RESOURCE
     open val resourceType = ResourceType.UNKNOWN
+    override var autoLoad: Boolean = false
 
     companion object {
         fun create(id: String, name: String, path: String = "", parent: String, isLoaded: Boolean = false): CpiResource {

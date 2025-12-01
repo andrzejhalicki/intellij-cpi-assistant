@@ -25,6 +25,10 @@ public class FileNodeStateComponent : PersistentStateComponent<FileNodeStateComp
     }
 
     fun addFileNode(fileNodeInfo: FileNodeInfo) {
+        state.fileNodes.find { it.artifactId == fileNodeInfo.artifactId && it.name == fileNodeInfo.name }?.let { existingNode ->
+            existingNode.path = fileNodeInfo.path
+            return
+        }
         state.fileNodes.add(fileNodeInfo)
     }
 

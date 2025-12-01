@@ -5,14 +5,14 @@ plugins {
 }
 
 group = "com.cpiassistant"
-version = "1.2.1"
+version = "1.3.0"
 
 repositories {
     mavenCentral()
 }
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14")
-    implementation("net.minidev:json-smart:2.5.1")
+    implementation("net.minidev:json-smart:2.5.2")
 
     // Testing dependencies
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
@@ -27,7 +27,7 @@ dependencies {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
-    version.set("2022.2.5")
+    version.set("2024.1")
     type.set("IC") // Target IDE Platform
 
     plugins.set(listOf(/* Plugin Dependencies */))
@@ -48,7 +48,7 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("222")
+        sinceBuild.set("241")
         untilBuild.set("253.*")
     }
 

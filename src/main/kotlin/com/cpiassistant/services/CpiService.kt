@@ -19,10 +19,10 @@ import okio.IOException
 import java.time.Instant
 
 class CpiService(
-    var clientID: String,
-    var clientSecret: String,
-    var url: String,
-    var tokenUrl: String
+    val clientID: String,
+    val clientSecret: String,
+    val url: String,
+    val tokenUrl: String
 ) {
 
     private var accessToken: String? = null
@@ -31,6 +31,13 @@ class CpiService(
     private val project: Project? by lazy { ProjectManager.getInstance().openProjects.firstOrNull() }
     private val fileNodeStateComponent by lazy { project?.service<FileNodeStateComponent>() }
     private val fileNodes by lazy { fileNodeStateComponent?.getFileNodes() }
+
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .connectionPool(ConnectionPool(5, 5, java.util.concurrent.TimeUnit.MINUTES))
+        .build()
 
     @OptIn(ExperimentalEncodingApi::class)
     fun authenticate(): Boolean {
@@ -52,8 +59,7 @@ class CpiService(
                 .post(formBody)
                 .build()
 
-            val client = OkHttpClient()
-            client.newCall(request).execute().use { response ->
+            httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     NotificationService.getInstance()?.showError("Authentication Error", "Failed to authenticate: ${response.code}")
                     return false
@@ -309,7 +315,8 @@ class CpiService(
         val json = Json { ignoreUnknownKeys = true }
         val jsonObject = json.parseToJsonElement(tokenResponse).jsonObject
         val expiresIn = jsonObject["expires_in"]?.jsonPrimitive?.content?.toLong()
-        return Instant.now().plusSeconds(expiresIn!!)
+            ?: throw IllegalStateException("Expiration time not found in response")
+        return Instant.now().plusSeconds(expiresIn)
     }
 
     private fun isTokenExpired(): Boolean {
@@ -339,8 +346,11 @@ class CpiService(
             requestBuilder.method(method, requestBody)
         }
 
-        val client = OkHttpClient()
-        return client.newCall(requestBuilder.build())
+        return httpClient.newCall(requestBuilder.build())
+    }
+
+    fun getResourcePath(artifactId: String, resourceName: String): String? {
+        return fileNodes?.find { node -> node.artifactId == artifactId && node.name == resourceName }?.path
     }
 
     private fun getResourcesInternal(artifactId: String, endpoint: String): List<CpiResource> {
@@ -355,7 +365,7 @@ class CpiService(
         results.forEach {
             val resourceName = it.jsonObject["Name"]?.jsonPrimitive?.content ?: ""
             val resource = CpiResource.create(it.jsonObject["Id"]?.jsonPrimitive?.content ?: "", resourceName, "", artifactId)
-            val path = fileNodes?.find { node -> node.artifactId == artifactId && node.name == resourceName }?.path
+            val path = getResourcePath(artifactId,resourceName)
             resource.path = path ?: ""
             resources.add(resource)
         }

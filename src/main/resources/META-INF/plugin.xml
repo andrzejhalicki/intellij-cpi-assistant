@@ -31,10 +31,14 @@
         <ul>
             <li>Download and map single resource</li>
             <li>Added support for XSLT</li>
+            <li>Lazy loading of artifacts and resources</li>
+            <li>Favorites support for artifacts and resources. Favorite objects are loaded automatically.</li>
         </ul>
         <h2>Fixes</h2>
         <ul>
             <li>Standardized naming and icons for actions</li>
+            <li>Improved user experience when loading nodes</li>
+            <li>Minor bug fixes and improvements</li>
         </ul>
 ]]></change-notes>
 
@@ -126,6 +130,20 @@
                 icon="com.cpiassistant.MyIcons.Download">
             <add-to-group group-id="com.cpiassistant.actions.ArtifactActionGroup"/>
         </action>
+        <action id="com.cpiassistant.actions.AddArtifactToFavoritesAction"
+                class="com.cpiassistant.actions.AddArtifactToFavoritesAction"
+                text="Add To Favorites"
+                description="Add artifact to Favorites"
+                icon="com.cpiassistant.MyIcons.Star">
+            <add-to-group group-id="com.cpiassistant.actions.ArtifactActionGroup"/>
+        </action>
+        <action id="com.cpiassistant.actions.RemoveArtifactFromFavoritesAction"
+                class="com.cpiassistant.actions.RemoveArtifactFromFavoritesAction"
+                text="Remove From Favorites"
+                description="Remove from Favorites"
+                icon="com.cpiassistant.MyIcons.Delete">
+            <add-to-group group-id="com.cpiassistant.actions.ArtifactActionGroup"/>
+        </action>
         <action id="com.cpiassistant.actions.UpdateResourceAction"
                 class="com.cpiassistant.actions.UpdateResourceAction"
                 text="Update In Tenant"
@@ -152,6 +170,20 @@
                 text="Download From Tenant"
                 description="Download resource from tenant and map to local directory"
                 icon="com.cpiassistant.MyIcons.Download">
+            <add-to-group group-id="com.cpiassistant.actions.ResourceActionGroup"/>
+        </action>
+        <action id="com.cpiassistant.actions.AddResourceToFavoritesAction"
+                class="com.cpiassistant.actions.AddResourceToFavoritesAction"
+                text="Add To Favorites"
+                description="Add resource to Favorites"
+                icon="com.cpiassistant.MyIcons.Star">
+            <add-to-group group-id="com.cpiassistant.actions.ResourceActionGroup"/>
+        </action>
+        <action id="com.cpiassistant.actions.RemoveResourceFromFavoritesAction"
+                class="com.cpiassistant.actions.RemoveResourceFromFavoritesAction"
+                text="Remove From Favorites"
+                description="Remove from Favorites"
+                icon="com.cpiassistant.MyIcons.Delete">
             <add-to-group group-id="com.cpiassistant.actions.ResourceActionGroup"/>
         </action>
     </actions>

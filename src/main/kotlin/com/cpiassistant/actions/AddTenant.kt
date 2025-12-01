@@ -1,6 +1,7 @@
 package com.cpiassistant.actions
 
 import AddTenantDialog
+import FavoritePackageInfo
 import TenantInfo
 import TenantStateComponent
 import com.cpiassistant.nodes.Tenant
@@ -42,7 +43,7 @@ class AddTenant : AnAction() {
                 val newTenant = Tenant(
                     dialog.getName(), dialog.getName(),
                     CpiService(dialog.getClientId(), dialog.getClientSecret(), dialog.getURL(), dialog.getTokenUrl()),
-                    mutableListOf<String>(),
+                    mutableListOf<FavoritePackageInfo>(),
                     tenantStateComponent
                 )
 

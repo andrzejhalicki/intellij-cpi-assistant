@@ -45,7 +45,7 @@ public class TenantStateComponent : PersistentStateComponent<TenantStateComponen
     }
 
     fun getTenants(): List<TenantInfo> {
-        return this.state.tenants.filter { _ -> true }.map { tenant ->
+        return this.state.tenants.map { tenant ->
             val attributes = createCredentialAttributes(tenant.url, tenant.clientID)
             val passwordSafe: PasswordSafe = PasswordSafe.instance
             val credentials = passwordSafe[attributes]
@@ -57,19 +57,98 @@ public class TenantStateComponent : PersistentStateComponent<TenantStateComponen
         }
     }
 
-    fun addFavoritePackage(tenantName: String, packageId: String) {
-        val tenant = state.tenants.find { it.name == tenantName }
-        tenant?.let {
-            if (!it.favoritePackages.contains(packageId)) {
-                it.favoritePackages.add(packageId)
-            }
-        }
+    fun addFavoritePackage(tenantName: String, packageId: String, packageName: String): FavoritePackageInfo? {
+        val tenant = state.tenants.find { it.name == tenantName } ?: return null
+        val favPackage = tenant.favoritePackages.find { pkg -> pkg.packageId == packageId }
+        if (favPackage != null) return null
+
+        val newFavPackage = FavoritePackageInfo(packageId = packageId, packageName = packageName, autoLoad = true)
+        tenant.favoritePackages.add(newFavPackage)
+        return newFavPackage
     }
 
     fun removeFavoritePackage(tenantName: String, packageId: String) {
         val tenant = state.tenants.find { it.name == tenantName }
         tenant?.let {
-            it.favoritePackages.remove(packageId)
+            it.favoritePackages.removeIf { pkg -> pkg.packageId == packageId }
+        }
+    }
+
+    fun addFavoriteArtifact(
+        tenantName: String,
+        packageId: String,
+        packageName: String,
+        artifactId: String,
+        artifactName: String
+    ): FavoriteArtifactInfo? {
+        val tenant = state.tenants.find { it.name == tenantName } ?: return null
+
+        val favoritePackage = tenant.favoritePackages.find { it.packageId == packageId }
+            ?: FavoritePackageInfo(packageId = packageId, packageName = packageName, autoLoad = false).also {
+                tenant.favoritePackages.add(it)
+            }
+
+        val existingArtifact = favoritePackage.favoriteArtifacts.find { it.artifactId == artifactId }
+        if (existingArtifact != null) {
+            existingArtifact.autoLoad = true
+            return null
+        }
+
+        val newFavArtifact = FavoriteArtifactInfo(artifactId = artifactId, artifactName = artifactName, autoLoad = true)
+        favoritePackage.favoriteArtifacts.add(newFavArtifact)
+        return newFavArtifact
+    }
+
+    fun removeFavoriteArtifact(tenantName: String, packageId: String, artifactId: String) {
+        val tenant = state.tenants.find { it.name == tenantName }
+        tenant?.let {
+            val favoritePackage = it.favoritePackages.find { pkg -> pkg.packageId == packageId }
+            favoritePackage?.let { pkg ->
+                pkg.favoriteArtifacts.removeIf { artifact -> artifact.artifactId == artifactId }
+            }
+        }
+    }
+
+    fun addFavoriteResource(
+        tenantName: String,
+        packageId: String,
+        packageName: String,
+        artifactId: String,
+        artifactName: String,
+        resourceId: String,
+        resourceName: String
+    ): FavoriteResourceInfo? {
+        val tenant = state.tenants.find { it.name == tenantName } ?: return null
+
+        val favoritePackage = tenant.favoritePackages.find { it.packageId == packageId }
+            ?: FavoritePackageInfo(packageId = packageId, packageName = packageName, autoLoad = false).also {
+                tenant.favoritePackages.add(it)
+            }
+
+        val favoriteArtifact = favoritePackage.favoriteArtifacts.find { it.artifactId == artifactId }
+            ?: FavoriteArtifactInfo(artifactId = artifactId, artifactName = artifactName, autoLoad = false).also {
+                favoritePackage.favoriteArtifacts.add(it)
+            }
+
+        if (favoriteArtifact.favoriteResources.any { it.resourceName == resourceName }) {
+            return null
+        }
+
+        val newFavResource = FavoriteResourceInfo(resourceId = resourceId, resourceName = resourceName)
+        favoriteArtifact.favoriteResources.add(newFavResource)
+        return newFavResource
+    }
+
+    fun removeFavoriteResource(tenantName: String, packageId: String, artifactId: String, resourceName: String) {
+        val tenant = state.tenants.find { it.name == tenantName }
+        tenant?.let {
+            val favoritePackage = it.favoritePackages.find { pkg -> pkg.packageId == packageId }
+            favoritePackage?.let { pkg ->
+                val favoriteArtifact = pkg.favoriteArtifacts.find { artifact -> artifact.artifactId == artifactId }
+                favoriteArtifact?.let { artifact ->
+                    artifact.favoriteResources.removeIf { resource -> resource.resourceName == resourceName }
+                }
+            }
         }
     }
 
@@ -87,5 +166,27 @@ data class TenantInfo(
     @Attribute var tokenUrl: String = "",
     @Attribute var clientID: String = "",
     @Attribute var clientSecret: String = "",
-    @Tag("favoritePackages") var favoritePackages: MutableList<String> = mutableListOf()
+    @Tag("favoritePackages") var favoritePackages: MutableList<FavoritePackageInfo> = mutableListOf()
+)
+
+@Tag("FavoritePackageInfo")
+data class FavoritePackageInfo(
+    @Attribute var packageId: String = "",
+    @Attribute var packageName: String = "",
+    @Attribute var autoLoad: Boolean = false,
+    @Tag("favoriteArtifacts") var favoriteArtifacts: MutableList<FavoriteArtifactInfo> = mutableListOf()
+)
+
+@Tag("FavoriteArtifactInfo")
+data class FavoriteArtifactInfo(
+    @Attribute var artifactId: String = "",
+    @Attribute var artifactName: String = "",
+    @Attribute var autoLoad: Boolean = false,
+    @Tag("favoriteResources") var favoriteResources: MutableList<FavoriteResourceInfo> = mutableListOf()
+)
+
+@Tag("FavoriteResourceInfo")
+data class FavoriteResourceInfo(
+    @Attribute var resourceId: String = "",
+    @Attribute var resourceName: String = ""
 )

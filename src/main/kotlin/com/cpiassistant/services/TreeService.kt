@@ -1,17 +1,22 @@
 package com.cpiassistant.services
 
 import CustomDataProvider
+import FavoritePackageInfo
+import FavoriteResourceInfo
+import com.cpiassistant.actions.DownloadResourceAction
 import com.cpiassistant.nodes.artifact.CpiArtifact
 import com.cpiassistant.nodes.CpiPackage
 import com.cpiassistant.nodes.resource.CpiResource
 import com.cpiassistant.nodes.Favorites
 import com.cpiassistant.nodes.Tenant
+import com.cpiassistant.toolWindow.LazyLoadingTreeModel
 import com.cpiassistant.toolWindow.MyTreeCellEditor
 import com.cpiassistant.toolWindow.MyTreeModel
 import com.cpiassistant.toolWindow.TreeCellRenderer
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
@@ -21,18 +26,23 @@ import com.intellij.ui.treeStructure.Tree
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
 import javax.swing.*
+import javax.swing.event.TreeExpansionEvent
+import javax.swing.event.TreeExpansionListener
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeCellRenderer
 import javax.swing.tree.DefaultTreeModel
 
 @Service(Service.Level.PROJECT)
-class TreeService(private val project: Project) {
+class TreeService(private val project: Project) : Disposable {
 
     var tree: Tree = Tree()
+    private var treeExpansionListener: TreeExpansionListener? = null
+    private var mouseListener: MouseListener? = null
 
     init {
 
     }
+
     fun buildTree(): Tree {
 
         val treeModel = MyTreeModel()
@@ -40,7 +50,7 @@ class TreeService(private val project: Project) {
         val models = treeModel.getModels()
         val dummyRoot = DefaultMutableTreeNode("Dummy Root")
         models.forEach { dummyRoot.add(it) }
-        val rootModel = DefaultTreeModel(dummyRoot)
+        val rootModel = LazyLoadingTreeModel(dummyRoot)
         tree = Tree(rootModel).apply {
             isRootVisible = false
             showsRootHandles = true
@@ -48,18 +58,33 @@ class TreeService(private val project: Project) {
 
         tree.putClientProperty(AnimatedIcon.ANIMATION_IN_RENDERER_ALLOWED, true)
 
-        tree.addMouseListener(object : MouseListener {
+        treeExpansionListener?.let { tree.removeTreeExpansionListener(it) }
+        mouseListener?.let { tree.removeMouseListener(it) }
+
+        treeExpansionListener = object : TreeExpansionListener {
+            override fun treeExpanded(event: TreeExpansionEvent) {
+                val expandedNode = event.path.lastPathComponent as? DefaultMutableTreeNode ?: return
+                handleNodeExpansion(expandedNode)
+            }
+
+            override fun treeCollapsed(event: TreeExpansionEvent) {
+                // No action needed on collapse
+            }
+        }
+        tree.addTreeExpansionListener(treeExpansionListener)
+
+        mouseListener = object : MouseListener {
             override fun mouseClicked(e: MouseEvent?) {
 
                 if (e == null) return
 
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    handleRightClick(e,tree)
+                    handleRightClick(e, tree)
                     return
                 }
 
                 if (SwingUtilities.isLeftMouseButton(e) && e.clickCount == 2) {
-                    handleDoubleClick(e,tree)
+                    handleDoubleClick(e, tree)
                     return
                 }
 
@@ -81,105 +106,303 @@ class TreeService(private val project: Project) {
 
             }
 
-        })
-        val renderer: DefaultTreeCellRenderer = TreeCellRenderer()
+        }
+        tree.addMouseListener(mouseListener)
+
+        val renderer = TreeCellRenderer()
         tree.setCellRenderer(renderer)
-        tree.cellEditor = MyTreeCellEditor(tree, renderer)
+        tree.cellEditor = MyTreeCellEditor(tree, DefaultTreeCellRenderer())
 
         return tree
+    }
+
+    private fun handleNodeExpansion(node: DefaultMutableTreeNode) {
+        val userObject = node.userObject
+
+        when (userObject) {
+            is Tenant -> {
+                if (node.childCount <= 1) {
+                    updateTree(node)
+                }
+            }
+
+            is CpiPackage -> {
+                if (node.childCount == 0) {
+                    loadPackageLazy(node)
+                }
+            }
+
+            is CpiArtifact -> {
+                if (node.childCount == 0) {
+                    loadArtifactResources(node)
+                }
+            }
+        }
     }
 
     fun updateTree(tenant: DefaultMutableTreeNode) {
 
         val cpiTenant = tenant.userObject as Tenant
-        val favoritesNode = DefaultMutableTreeNode(Favorites())
-        tenant.add(favoritesNode)
 
-        // Fetch and add all package nodes
-        cpiTenant.getPackages { packages ->
-            packages.forEach { ps ->
-                tenant.add(DefaultMutableTreeNode(ps))
-            }
-        }
+        cpiTenant.isLoading = true
 
-        // Add favorite package nodes
-        cpiTenant.favoritePackages.forEach { favPackage ->
-            favoritesNode.add(DefaultMutableTreeNode(favPackage))
-        }
-
-        // Snapshot children to a list to avoid iterator issues during tree modification
-        val childrenList = tenant.children().toList()
-        childrenList.forEach { p ->
-            val packageNode = p as DefaultMutableTreeNode
-            if (packageNode.userObject is Favorites) {
-                // Load favorite packages
-                val favChildrenList = packageNode.children().toList()
-                favChildrenList.forEach { fp ->
-                    val favPackageNode = fp as DefaultMutableTreeNode
-                    loadPackage(favPackageNode)
-                }
-                return@forEach
-            }
-            // Load regular packages
-            loadPackage(packageNode)
-        }
-
-        // Mark tenant as loaded and notify tree model on EDT
-        cpiTenant.isLoaded = true
         ApplicationManager.getApplication().invokeLater {
             val model = tree.model as DefaultTreeModel
-            model.nodeStructureChanged(tenant)
+            model.nodeChanged(tenant)
+        }
+
+        val favorites = Favorites()
+        val favoritesNode = DefaultMutableTreeNode(favorites)
+        tenant.add(favoritesNode)
+
+        favorites.isLoading = true
+        ApplicationManager.getApplication().invokeLater {
+            val model = tree.model as DefaultTreeModel
+            model.nodeChanged(favoritesNode)
+        }
+
+        ApplicationManager.getApplication().executeOnPooledThread {
+
+            cpiTenant.getPackages { packages ->
+                packages.forEach { ps ->
+                    tenant.add(DefaultMutableTreeNode(ps))
+                }
+            }
+
+            cpiTenant.favoritePackages.forEach { favPackage ->
+                val cpiPackage = CpiPackage(
+                    favPackage.packageId,
+                    favPackage.packageName,
+                    cpiTenant.service
+                )
+                val packageNode = DefaultMutableTreeNode(cpiPackage)
+                favoritesNode.add(packageNode)
+                cpiPackage.isLoading = true
+                cpiPackage.autoLoad = favPackage.autoLoad
+                ApplicationManager.getApplication().invokeLater {
+                    val model = tree.model as DefaultTreeModel
+                    model.nodeStructureChanged(packageNode)
+                }
+            }
+
+            val childrenList = tenant.children().toList()
+            childrenList.forEach { p ->
+                val packageNode = p as DefaultMutableTreeNode
+                if (packageNode.userObject is Favorites) {
+                    val favChildrenList = packageNode.children().toList()
+                    favChildrenList.forEach { fp ->
+                        val favPackageNode = fp as DefaultMutableTreeNode
+                        loadFavPackage(favPackageNode, cpiTenant)
+                    }
+                    return@forEach
+                }
+            }
+
+            cpiTenant.isLoaded = true
+            cpiTenant.isLoading = false
+            favorites.isLoaded = true
+            favorites.isLoading = false
+            ApplicationManager.getApplication().invokeLater {
+                val model = tree.model as DefaultTreeModel
+                model.nodeStructureChanged(tenant)
+                model.nodeStructureChanged(favoritesNode)
+            }
         }
     }
 
-    private fun loadPackage(packageNode: DefaultMutableTreeNode) {
-        val cpiPackage = packageNode.userObject as CpiPackage
+    private fun notifyNodeChanged(node: DefaultMutableTreeNode) {
+        ApplicationManager.getApplication().invokeLater {
+            val model = tree.model as DefaultTreeModel
+            model.nodeStructureChanged(node)
+        }
+    }
+
+    private fun loadArtifactWithResources(
+        artifact: CpiArtifact,
+        parentNode: DefaultMutableTreeNode
+    ) {
+        val artifactNode = DefaultMutableTreeNode(artifact)
+        parentNode.add(artifactNode)
+        artifact.getResources(artifact.id) { resources ->
+            resources.forEach { resource ->
+                artifactNode.add(DefaultMutableTreeNode(resource))
+                resource.isLoaded = true
+            }
+            artifact.isLoading = false
+            artifact.isLoaded = true
+            notifyNodeChanged(artifactNode)
+        }
+    }
+
+    private fun loadFullPackageContent(
+        cpiPackage: CpiPackage,
+        packageNode: DefaultMutableTreeNode
+    ) {
         cpiPackage.getArtifacts(cpiPackage.id) { artifacts ->
             artifacts.forEach { artifact ->
-                val artifactNode = DefaultMutableTreeNode(artifact)
-                packageNode.add(artifactNode)
-                artifact.getResources(artifact.id) { resources ->
-                    resources.forEach { resource ->
-                        artifactNode.add(DefaultMutableTreeNode(resource))
-                        resource.isLoaded = true
-                    }
-                    // Notify tree model on EDT after resources are loaded
-                    ApplicationManager.getApplication().invokeLater {
-                        val model = tree.model as DefaultTreeModel
-                        model.nodeStructureChanged(artifactNode)
-                    }
-                }
-                artifact.isLoaded = true
+                loadArtifactWithResources(artifact, packageNode)
             }
         }
         cpiPackage.getScriptCollections(cpiPackage.id) { scriptCollections ->
             scriptCollections.forEach { scriptCollection ->
-                val collectionNode = DefaultMutableTreeNode(scriptCollection)
-                packageNode.add(collectionNode)
-                scriptCollection.getResources(scriptCollection.id) { resources ->
-                    resources.forEach { resource ->
-                        collectionNode.add(DefaultMutableTreeNode(resource))
-                        resource.isLoaded = true
-                    }
-                    // Notify tree model on EDT after resources are loaded
-                    ApplicationManager.getApplication().invokeLater {
-                        val model = tree.model as DefaultTreeModel
-                        model.nodeStructureChanged(collectionNode)
-                    }
-                }
-                scriptCollection.isLoaded = true
+                loadArtifactWithResources(scriptCollection, packageNode)
             }
         }
+    }
+
+    private fun loadSelectedFavorites(
+        packageInfo: FavoritePackageInfo,
+        packageNode: DefaultMutableTreeNode,
+        service: CpiService
+    ) {
+        packageInfo.favoriteArtifacts.forEach { favArtifact ->
+            val artifact = CpiArtifact(
+                favArtifact.artifactId,
+                favArtifact.artifactName,
+                service
+            )
+            artifact.autoLoad = favArtifact.autoLoad
+            val artifactNode = DefaultMutableTreeNode(artifact)
+            packageNode.add(artifactNode)
+
+            if (favArtifact.autoLoad) {
+                loadAllResourcesForArtifact(artifact, artifactNode)
+            } else {
+                loadSelectedResources(favArtifact.favoriteResources, artifact, artifactNode)
+            }
+
+            artifact.isLoaded = true
+            artifact.isLoading = false
+            notifyNodeChanged(artifactNode)
+        }
+    }
+
+    private fun loadAllResourcesForArtifact(
+        artifact: CpiArtifact,
+        artifactNode: DefaultMutableTreeNode
+    ) {
+        artifact.getResources(artifact.id) { resources ->
+            resources.forEach { resource ->
+                artifactNode.add(DefaultMutableTreeNode(resource))
+                resource.isLoaded = true
+            }
+        }
+    }
+
+    private fun loadSelectedResources(
+        favoriteResources: List<FavoriteResourceInfo>,
+        artifact: CpiArtifact,
+        artifactNode: DefaultMutableTreeNode
+    ) {
+        favoriteResources.forEach { favResource ->
+            val resource = CpiResource.create(
+                favResource.resourceId,
+                favResource.resourceName,
+                path = artifact.service.getResourcePath(artifact.id, favResource.resourceName) ?: "",
+                artifact.id,
+                true
+            )
+            artifactNode.add(DefaultMutableTreeNode(resource))
+            resource.isLoaded = true
+        }
+    }
+
+    private fun loadFavPackage(packageNode: DefaultMutableTreeNode, tenant: Tenant) {
+        val cpiPackage = packageNode.userObject as CpiPackage
+        val packageInfo = tenant.favoritePackages.find { it.packageId == cpiPackage.id }
+        cpiPackage.autoLoad = packageInfo?.autoLoad == true
+
+        if (packageInfo?.autoLoad == true) {
+            loadFullPackageContent(cpiPackage, packageNode)
+        } else {
+            packageInfo?.let { loadSelectedFavorites(it, packageNode, tenant.service) }
+        }
+
         cpiPackage.isLoaded = true
-        // Notify tree model on EDT after package is fully loaded
+        cpiPackage.isLoading = false
+        notifyNodeChanged(packageNode)
+    }
+
+    private fun loadPackageLazy(packageNode: DefaultMutableTreeNode) {
+        val cpiPackage = packageNode.userObject as CpiPackage
+
+        cpiPackage.isLoading = true
+
         ApplicationManager.getApplication().invokeLater {
             val model = tree.model as DefaultTreeModel
-            model.nodeStructureChanged(packageNode)
+            model.nodeChanged(packageNode)
+        }
+
+        val pendingOps = java.util.concurrent.atomic.AtomicInteger(2)
+
+        fun markLoadedIfComplete() {
+            if (pendingOps.decrementAndGet() == 0) {
+                cpiPackage.isLoading = false
+                cpiPackage.isLoaded = true
+                ApplicationManager.getApplication().invokeLater {
+                    val treeModel = tree.model as DefaultTreeModel
+                    treeModel.nodeChanged(packageNode)
+                }
+            }
+        }
+
+        ApplicationManager.getApplication().executeOnPooledThread {
+            cpiPackage.getArtifacts(cpiPackage.id) { artifacts ->
+                artifacts.forEach { artifact ->
+                    val artifactNode = DefaultMutableTreeNode(artifact)
+                    packageNode.add(artifactNode)
+                }
+                ApplicationManager.getApplication().invokeLater {
+                    val treeModel = tree.model as DefaultTreeModel
+                    treeModel.nodeStructureChanged(packageNode)
+                }
+                markLoadedIfComplete()
+            }
+
+            cpiPackage.getScriptCollections(cpiPackage.id) { scriptCollections ->
+                scriptCollections.forEach { scriptCollection ->
+                    val collectionNode = DefaultMutableTreeNode(scriptCollection)
+                    packageNode.add(collectionNode)
+                }
+                ApplicationManager.getApplication().invokeLater {
+                    val treeModel = tree.model as DefaultTreeModel
+                    treeModel.nodeStructureChanged(packageNode)
+                }
+                markLoadedIfComplete()
+            }
+        }
+    }
+
+    private fun loadArtifactResources(artifactNode: DefaultMutableTreeNode) {
+        val artifact = artifactNode.userObject as CpiArtifact
+
+        artifact.isLoading = true
+
+        ApplicationManager.getApplication().invokeLater {
+            val model = tree.model as DefaultTreeModel
+            model.nodeChanged(artifactNode)
+        }
+
+        ApplicationManager.getApplication().executeOnPooledThread {
+            artifact.getResources(artifact.id) { resources ->
+                resources.forEach { resource ->
+                    artifactNode.add(DefaultMutableTreeNode(resource))
+                }
+
+                artifact.isLoading = false
+                artifact.isLoaded = true
+
+                ApplicationManager.getApplication().invokeLater {
+                    val treeModel = tree.model as DefaultTreeModel
+                    treeModel.nodeStructureChanged(artifactNode)
+                }
+            }
         }
     }
 
     private fun handleRightClick(e: MouseEvent?, tree: Tree) {
-        val path = tree.getPathForLocation(e!!.x, e.y)
+        if (e == null) return
+        val path = tree.getPathForLocation(e.x, e.y)
         if (path?.getLastPathComponent() == null) {
             return
         }
@@ -251,11 +474,22 @@ class TreeService(private val project: Project) {
         val nodeHoveredOver = path.getLastPathComponent() as DefaultMutableTreeNode
         if (nodeHoveredOver.userObject is CpiResource) {
             val resource = nodeHoveredOver.userObject as CpiResource
-            val file = LocalFileSystem.getInstance().findFileByPath(resource.path)
-            if (file == null || !file.exists()) {
+            if (resource.path.isEmpty()) {
+                val parentNode = nodeHoveredOver.parent as DefaultMutableTreeNode
+                val artifact = parentNode.userObject as CpiArtifact
+                DownloadResourceAction().downloadResource(resource, artifact, nodeHoveredOver, tree, project)
                 return
             }
+            val file = LocalFileSystem.getInstance().findFileByPath(resource.path)
+            if (file == null || !file.exists()) return
             FileEditorManager.getInstance(project).openFile(file, true)
         }
+    }
+
+    override fun dispose() {
+        treeExpansionListener?.let { tree.removeTreeExpansionListener(it) }
+        mouseListener?.let { tree.removeMouseListener(it) }
+        treeExpansionListener = null
+        mouseListener = null
     }
 }

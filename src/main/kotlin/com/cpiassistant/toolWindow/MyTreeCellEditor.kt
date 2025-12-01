@@ -24,7 +24,7 @@ class MyTreeCellEditor(tree: JTree, renderer: DefaultTreeCellRenderer) : Default
         component.addFocusListener(object : FocusListener {
             override fun focusGained(e: FocusEvent) {}
             override fun focusLost(e: FocusEvent) {
-                tree!!.stopEditing()
+                tree?.stopEditing()
             }
         })
         return component
