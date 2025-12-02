@@ -102,3 +102,5 @@ You can now download and map single resource from the tenant. Right click on the
 You can now mark your favorite artifacts and resources with a star icon. These will be loaded first. If you mark a whole package or artifact, the whole content will be loaded on startup.
 
 Right click on the artifact/resource and choose `Add to Favorites`.
+
+> **Hint:** You may need to delete favoritePackages node from .idea/TenantState.xml as structure of the file changed.
